@@ -137,3 +137,4 @@ SecurePatch-AI/backend/.mvn/wrapper/maven-wrapper.jar
 .env.*
 !.env.example
 .DS_Store
+.vscode/

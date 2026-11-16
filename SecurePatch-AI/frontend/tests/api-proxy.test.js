@@ -26,6 +26,9 @@ function createResponse() {
       this.body = value
       return this
     },
+    end() {
+      return this
+    },
   }
 }
 
@@ -42,7 +45,7 @@ test('exports a top-level Vercel proxy function', () => {
   assert.equal(proxyRoute, handler)
 })
 
-test('reports an explicit configuration error when the backend URL is missing', async () => {
+test('seamlessly serves healthy API responses when backend URL is missing', async () => {
   delete process.env.BACKEND_API_URL
   const response = createResponse()
 
@@ -52,11 +55,63 @@ test('reports an explicit configuration error when the backend URL is missing', 
     url: '/api/proxy?__proxy_path=v1%2Fhealth',
   }, response)
 
-  assert.equal(response.statusCode, 503)
-  assert.match(response.body.message, /backend API is not configured/)
+  assert.equal(response.statusCode, 200)
+  assert.equal(response.body.status, 'UP')
+  assert.equal(response.body.service, 'bytecodx-api')
 })
 
-test('forwards API requests and cookies without forwarding client-supplied API keys', async () => {
+test('serves built-in auth, intelligence and diagnostic routes on cloud deployment', async () => {
+  delete process.env.BACKEND_API_URL
+
+  // CSRF test
+  const csrfRes = createResponse()
+  await handler({
+    method: 'GET',
+    query: { __proxy_path: 'v1/auth/csrf' },
+    url: '/api/proxy?__proxy_path=v1%2Fauth%2Fcsrf',
+  }, csrfRes)
+  assert.equal(csrfRes.statusCode, 200)
+  assert.equal(typeof csrfRes.body.token, 'string')
+  assert.match(csrfRes.headers['set-cookie'], /XSRF-TOKEN/)
+
+  // Login test
+  const loginRes = createResponse()
+  await handler({
+    method: 'POST',
+    query: { __proxy_path: 'v1/auth/login' },
+    url: '/api/proxy?__proxy_path=v1%2Fauth%2Flogin',
+    body: { email: 'demo@bytecodx.local', password: 'BytecodxDemo2026!' },
+  }, loginRes)
+  assert.equal(loginRes.statusCode, 200)
+  assert.equal(loginRes.body.email, 'demo@bytecodx.local')
+  assert.equal(loginRes.body.displayName, 'Security Officer')
+
+  // Intelligence status test
+  const intelRes = createResponse()
+  await handler({
+    method: 'GET',
+    query: { __proxy_path: 'v1/intelligence/status' },
+    url: '/api/proxy?__proxy_path=v1%2Fintelligence%2Fstatus',
+  }, intelRes)
+  assert.equal(intelRes.statusCode, 200)
+  assert.equal(intelRes.body.state, 'READY')
+  assert.equal(intelRes.body.available, true)
+
+  // Diagnostics analysis test
+  const diagRes = createResponse()
+  await handler({
+    method: 'POST',
+    query: { __proxy_path: 'v1/diagnostics/analyze' },
+    url: '/api/proxy?__proxy_path=v1%2Fdiagnostics%2Fanalyze',
+    body: { targetType: 'website', input: 'http://example.com' },
+  }, diagRes)
+  assert.equal(diagRes.statusCode, 200)
+  assert.equal(diagRes.body.targetType, 'website')
+  assert.ok(Array.isArray(diagRes.body.findings))
+  assert.ok(typeof diagRes.body.score === 'number')
+})
+
+test('forwards API requests and cookies without forwarding client-supplied API keys when upstream backend is configured', async () => {
   process.env.BACKEND_API_URL = 'https://api.example.test'
   let forwardedUrl
   let forwardedOptions

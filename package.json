@@ -1,0 +1,9 @@
+{
+  "name": "bytecodx-platform",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "cd SecurePatch-AI/frontend && npm install && npm run build"
+  }
+}

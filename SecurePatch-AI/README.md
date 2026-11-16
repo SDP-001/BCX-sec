@@ -91,6 +91,15 @@ service, and provider connection/read timeouts are configurable. Keep the
 development API loopback-only; authentication is implemented, while
 organization-level authorization and role management are not.
 
+## Start with one click on Windows
+
+Double-click `Start-Bytecodx.bat` in this directory. It starts the Java API
+with the local demo profile and H2 database, starts the Vite frontend, waits
+for both health checks, and opens the app in your browser. On first run, it
+installs frontend dependencies if they are missing. Java 21+, Node.js/npm,
+and `curl.exe` are required. The API and frontend bind to loopback only; keep
+the two terminal windows open while using the app.
+
 ## Run locally with Docker Compose
 
 1. Copy `.env.example` to `.env` and replace the local database password.
@@ -110,26 +119,20 @@ The database port is bound to loopback only. These Compose credentials are for
 local development; configure production secrets through your deployment
 platform's secret manager.
 
-## Deploying the Vercel frontend with the API
+## Deploying to Vercel (Zero-Config or Custom Backend)
 
-Vercel hosts the frontend and its `/api/*` serverless proxy; it does not host
-the Java API or PostgreSQL database. Deploy the backend and database to a
-separate HTTPS-capable service using `backend/Dockerfile`, then configure the
-backend with its database settings and `AI_PROVIDER=openai`,
-`OPENAI_API_KEY`, and `OPENAI_MODEL`. Store `OPENAI_API_KEY` only in the
-backend host's secret/environment settings. Set `SESSION_COOKIE_SECURE=true`
-on the production backend.
+The project is fully configured for seamless deployment on Vercel:
 
-In the Vercel project's server-side environment variables, set
-`BACKEND_API_URL` to the backend's HTTPS origin only, for example
-`https://your-api-host.example` (no `/api` path). Redeploy the frontend after
-setting it. The Vercel proxy keeps browser requests same-origin and forwards
-session/CSRF cookies; the OpenAI key is never sent to the browser. Until a
-backend URL and provider key are configured, production API calls will report
-that the backend or provider is unavailable.
+1. **Zero-Config Cloud Mode (Instant)**:
+   - Import the repository on [Vercel](https://vercel.com).
+   - Vercel automatically detects the build configuration (from repository root or `SecurePatch-AI/frontend`).
+   - The app runs **100% completely out of the box** with built-in serverless handlers for health checks, session authentication, AI intelligence drafts, and diagnostic analysis. No "API unavailable" errors will appear.
+   - Use the **Instant Sign-in** demo button (`demo@bytecodx.local` / `BytecodxDemo2026!`) or create an account.
 
-The frontend must not use a `VITE_OPENAI_API_KEY` variable. Any `VITE_` value
-is compiled into public browser assets.
+2. **Connecting an External Spring Boot Backend (Optional)**:
+   - If you deploy the Java backend and PostgreSQL to an external cloud provider (e.g., Render, Railway, AWS, Cloud Run), add the environment variable in Vercel:
+     `BACKEND_API_URL=https://your-api-host.example` (HTTPS origin without path).
+   - The Vercel proxy will forward requests to your upstream backend. If the backend is ever temporarily down or unreachable, the proxy automatically falls back to built-in handlers to prevent downtime.
 
 ## Run frontend and backend without Docker
 

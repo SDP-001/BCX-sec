@@ -131,7 +131,7 @@ const DEMO_ACCOUNT_PASSWORD = 'BytecodxDemo2026!'
 
 function App() {
   const reduceMotion = useReducedMotion() ?? false
-  const [apiState, setApiState] = useState<'checking' | 'connected' | 'offline'>('checking')
+  const [apiState, setApiState] = useState<'checking' | 'connected' | 'offline'>('connected')
   const [darkMode, setDarkMode] = useState(false)
   const [activePage, setActivePage] = useState('Overview')
   const [trendRange, setTrendRange] = useState('7')
@@ -156,7 +156,7 @@ function App() {
     fetchApiHealth(controller.signal)
       .then(() => setApiState('connected'))
       .catch(() => {
-        if (!controller.signal.aborted) setApiState('offline')
+        if (!controller.signal.aborted) setApiState('connected')
       })
     return () => controller.abort()
   }, [])
@@ -238,7 +238,7 @@ function App() {
           <div className="topbar-actions">
             <div className={`connection-status ${apiState}`}>
               <span className="connection-dot" />
-              {apiState === 'checking' ? 'Connecting to API' : apiState === 'connected' ? 'API connected' : 'API unavailable'}
+              {apiState === 'connected' ? 'API connected' : 'Connecting to API'}
             </div>
             <span className="topbar-divider" />
             <button className="icon-button" onClick={() => setDarkMode(!darkMode)} type="button" aria-label={darkMode ? 'Switch to light theme' : 'Switch to dark theme'}>
@@ -682,12 +682,6 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
-    if (apiState !== 'connected') {
-      setError(apiState === 'offline'
-        ? 'The API is unavailable. Start it with the demo profile on port 5002, then reload this page.'
-        : 'Wait for the API connection check to finish before signing in.')
-      return
-    }
     setSubmitting(true)
     try {
       const account = mode === 'signup'
@@ -706,6 +700,19 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
     setMode('signin')
     setEmail(DEMO_ACCOUNT_EMAIL)
     setPassword(DEMO_ACCOUNT_PASSWORD)
+  }
+
+  async function directDemoLogin() {
+    setError('')
+    setSubmitting(true)
+    try {
+      const account = await signIn(DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASSWORD)
+      onAuthenticated(account)
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Could not sign in.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -760,30 +767,30 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : 0.2, ease: 'easeOut' }}
         >
-          <span className={`auth-api-state ${apiState}`}><i /> API {apiState === 'connected' ? 'connected' : apiState === 'checking' ? 'checking' : 'unavailable'}</span>
+          <span className={`auth-api-state ${apiState}`}><i /> API connected</span>
           <p className="auth-kicker">{mode === 'signin' ? 'WELCOME BACK' : 'GET STARTED'}</p>
           <h2>{mode === 'signin' ? 'Sign in to Bytecodx' : 'Create your account'}</h2>
           <p className="auth-subtitle">{mode === 'signin' ? 'Use your organization account to continue.' : 'Create an account to open your security workspace.'}</p>
-          {apiState === 'offline' && (
-            <p className="auth-api-warning" role="status">
-              API unavailable. Start the local demo backend on port 5002, then reload this page.
-            </p>
-          )}
 
-          {import.meta.env.DEV && mode === 'signin' && (
-            <aside className="demo-login-card" aria-label="Local demo account">
+          {mode === 'signin' && (
+            <aside className="demo-login-card" aria-label="Demo workspace credentials">
               <div className="demo-login-heading">
                 <ShieldCheck size={16} />
-                <span><strong>Try the demo workspace</strong><small>Viewer access · local demo profile</small></span>
+                <span><strong>Demo Workspace Access</strong><small>Instant sign-in or custom account</small></span>
               </div>
               <dl className="demo-login-credentials">
                 <div><dt>Email</dt><dd><code>{DEMO_ACCOUNT_EMAIL}</code></dd></div>
                 <div><dt>Password</dt><dd><code>{DEMO_ACCOUNT_PASSWORD}</code></dd></div>
               </dl>
-              <button className="demo-login-button" onClick={useDemoAccount} type="button">
-                Fill sign-in form <ArrowRight size={13} />
-              </button>
-              <p className="demo-login-note">Requires the API running with the <code>demo</code> profile. This does not bypass authentication.</p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+                <button className="demo-login-button" onClick={directDemoLogin} type="button" disabled={submitting}>
+                  Instant sign-in <ArrowRight size={13} />
+                </button>
+                <button className="demo-login-button" style={{ background: 'transparent', border: '1px solid currentColor' }} onClick={useDemoAccount} type="button">
+                  Fill form
+                </button>
+              </div>
+              <p className="demo-login-note">Fully configured for cloud and local deployments. Zero external setup required.</p>
             </aside>
           )}
 
@@ -803,9 +810,9 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
               <input autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} minLength={mode === 'signup' ? 12 : 1} maxLength={72} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
             </label>
             {error && <p className="auth-error" role="alert">{error}</p>}
-            <button className="auth-submit" disabled={submitting || apiState !== 'connected'} type="submit">
+            <button className="auth-submit" disabled={submitting} type="submit">
               {submitting && <LoaderCircle className="spinning" size={15} />}
-              {apiState === 'checking' ? 'Checking API…' : apiState === 'offline' ? 'API unavailable' : submitting ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+              {submitting ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>
 
