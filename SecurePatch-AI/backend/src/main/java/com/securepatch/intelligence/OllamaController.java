@@ -22,7 +22,7 @@ public class OllamaController {
     }
 
     @PostMapping("/explanations")
-    public OllamaExplanationResponse explain(@Valid @RequestBody OllamaExplanationRequest request) {
+    public OllamaExplanationResponse explain(@Valid @RequestBody IntelligenceExplanationRequest request) {
         return ollamaService.explain(request);
     }
 }

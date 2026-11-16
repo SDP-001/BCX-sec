@@ -2,14 +2,15 @@
 
 Bytecodx Security Workspace is the vulnerability-management application
 alongside the Bytecodx resource collection. It uses a React/TypeScript
-frontend, a Java 21 Spring Boot API, PostgreSQL, and a local Ollama model.
+frontend, a Java 21 Spring Boot API, PostgreSQL, and a configurable AI provider
+(local Ollama or OpenAI).
 
 ## Phase 1 status
 
 - Responsive navy-and-indigo dashboard with light and dark themes.
 - API availability indicator backed by a real health endpoint.
-- Required local Ollama status and evidence-grounded draft UI backed by the local
-  Spring Boot API. Drafts are explicitly unverified.
+- Configurable local Ollama or server-side OpenAI integration for
+  evidence-grounded drafts. Drafts are explicitly unverified.
 - Server-side account registration, password hashing, CSRF-protected session
   sign-in/sign-out, and a database migration for user accounts.
 - Spring Boot and PostgreSQL configuration, Dockerfiles, and Docker Compose.
@@ -18,7 +19,7 @@ frontend, a Java 21 Spring Boot API, PostgreSQL, and a local Ollama model.
 
 Asset/scanner workflows, vulnerability-source correlation, risk scoring,
 remediation, and reporting are not implemented yet; they belong to later
-phases. Ollama drafts explanations from caller-supplied evidence and is not a
+phases. AI drafts explanations from caller-supplied evidence and is not a
 verified intelligence source.
 
 ## Local database-free demo
@@ -39,31 +40,35 @@ The demo API listens on `127.0.0.1:5002` by default, and Vite's development
 proxy targets that port. Set `SERVER_PORT` or `VITE_API_PROXY_TARGET` to
 override either default.
 
-## Required local Ollama setup
+## AI provider setup
 
-AI explanations require a local Ollama service and installed model. No external
-AI API or API key is used. The default configuration is enabled and expects
-`qwen2.5:3b`. The integration accepts caller-provided evidence and source
-labels, and responses are always marked `UNVERIFIED_DRAFT`; independently
-validate every result.
+AI explanations use the provider selected by the backend's `AI_PROVIDER`
+setting. The default is `ollama`, which expects a local Ollama service and
+installed `qwen2.5:3b` model. For OpenAI, set `AI_PROVIDER=openai`,
+`OPENAI_API_KEY` to your secret key, and `OPENAI_MODEL` to a model available to
+that key. Set these variables on the Java backend process or hosting service.
+Never put an AI key in frontend code, a `VITE_` variable, the login page, or
+source control.
 
-For Docker Compose, copy `.env.example` to `.env`, then run
-`docker compose up --build`. Pull the model once:
+For local Docker Compose, copy `.env.example` to `.env`, choose the provider,
+then run `docker compose up --build`. For Ollama, pull the model once:
 `docker compose exec ollama ollama pull qwen2.5:3b`. Model downloads are never
 triggered automatically. The Ollama container is reachable only from the
 Compose network and does not publish its port to the host.
 
-For host-installed Ollama, set `OLLAMA_ENABLED=true`,
-`OLLAMA_MODEL=qwen2.5:3b`, and `OLLAMA_BASE_URL=http://localhost:11434` for the
-backend process. Install the model with `ollama pull qwen2.5:3b`.
+For host-installed Ollama, set `AI_PROVIDER=ollama`, `OLLAMA_ENABLED=true`,
+`OLLAMA_MODEL=qwen2.5:3b`, and `OLLAMA_BASE_URL=http://localhost:11434` for
+the backend process. Install the model with `ollama pull qwen2.5:3b`.
 
 API endpoints:
 
-- `GET /api/v1/intelligence/ollama/status` reports disabled, unavailable,
-  missing-model, or ready state.
-- `POST /api/v1/intelligence/ollama/explanations` accepts a question,
+- `GET /api/v1/intelligence/status` reports the configured provider and its
+  availability. For OpenAI, this checks the backend key and configured model.
+- `POST /api/v1/intelligence/explanations` accepts a question,
   caller-supplied evidence, and source-reference labels. The evidence and
   labels are not independently verified by this foundation build.
+- The previous `/api/v1/intelligence/ollama/*` endpoints remain available for
+  local Ollama integrations.
 
 Example request body:
 
@@ -77,12 +82,14 @@ Example request body:
 
 Inputs are limited to 1,000 characters for the question, 8,000 for evidence,
 and 10 source labels of up to 200 characters each. Generation is capped at
-512 tokens.
+512 tokens. When using OpenAI, the supplied question, evidence, and source
+labels are sent to OpenAI; do not include credentials, personal information,
+or other secrets.
 
-The base URL is restricted to local loopback or the Compose `ollama` service,
-and connection/read timeouts are configurable. Keep the development API
-loopback-only; authentication is implemented, while organization-level
-authorization and role management are not.
+The Ollama base URL is restricted to local loopback or the Compose `ollama`
+service, and provider connection/read timeouts are configurable. Keep the
+development API loopback-only; authentication is implemented, while
+organization-level authorization and role management are not.
 
 ## Run locally with Docker Compose
 
@@ -103,6 +110,27 @@ The database port is bound to loopback only. These Compose credentials are for
 local development; configure production secrets through your deployment
 platform's secret manager.
 
+## Deploying the Vercel frontend with the API
+
+Vercel hosts the frontend and its `/api/*` serverless proxy; it does not host
+the Java API or PostgreSQL database. Deploy the backend and database to a
+separate HTTPS-capable service using `backend/Dockerfile`, then configure the
+backend with its database settings and `AI_PROVIDER=openai`,
+`OPENAI_API_KEY`, and `OPENAI_MODEL`. Store `OPENAI_API_KEY` only in the
+backend host's secret/environment settings. Set `SESSION_COOKIE_SECURE=true`
+on the production backend.
+
+In the Vercel project's server-side environment variables, set
+`BACKEND_API_URL` to the backend's HTTPS origin only, for example
+`https://your-api-host.example` (no `/api` path). Redeploy the frontend after
+setting it. The Vercel proxy keeps browser requests same-origin and forwards
+session/CSRF cookies; the OpenAI key is never sent to the browser. Until a
+backend URL and provider key are configured, production API calls will report
+that the backend or provider is unavailable.
+
+The frontend must not use a `VITE_OPENAI_API_KEY` variable. Any `VITE_` value
+is compiled into public browser assets.
+
 ## Run frontend and backend without Docker
 
 Start PostgreSQL and set `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD` in the
@@ -115,7 +143,7 @@ for the database-free demo profile.
 ## Project layout
 
 ```text
-backend/    Spring Boot API, session authentication, local Ollama integration, and tests
+backend/    Spring Boot API, session authentication, AI providers, and tests
 frontend/   React, TypeScript, Vite, and Tailwind CSS
 compose.yaml
 ```

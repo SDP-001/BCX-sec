@@ -82,7 +82,7 @@ public class OllamaService {
         }
     }
 
-    public OllamaExplanationResponse explain(OllamaExplanationRequest request) {
+    public OllamaExplanationResponse explain(IntelligenceExplanationRequest request) {
         OllamaStatus status = status();
         if (!status.available()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, status.detail());

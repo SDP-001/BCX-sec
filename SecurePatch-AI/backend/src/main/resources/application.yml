@@ -16,6 +16,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:5001}
+  servlet:
+    session:
+      cookie:
+        secure: ${SESSION_COOKIE_SECURE:false}
   error:
     include-message: never
 
@@ -24,6 +28,13 @@ bytecodx:
     enabled: ${DEMO_ACCOUNT_ENABLED:false}
     email: ${DEMO_ACCOUNT_EMAIL:}
     password: ${DEMO_ACCOUNT_PASSWORD:}
+  ai:
+    provider: ${AI_PROVIDER:ollama}
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-4o-mini}
+    connect-timeout: ${OPENAI_CONNECT_TIMEOUT:5s}
+    read-timeout: ${OPENAI_READ_TIMEOUT:60s}
   ollama:
     enabled: ${OLLAMA_ENABLED:true}
     base-url: ${OLLAMA_BASE_URL:http://localhost:11434}

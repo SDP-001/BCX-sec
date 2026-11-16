@@ -2,9 +2,11 @@ package com.securepatch.auth;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -12,18 +14,23 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import com.securepatch.config.SecurityConfiguration;
 
 @WebMvcTest(AuthController.class)
 @Import(SecurityConfiguration.class)
+@TestPropertySource(properties = {
+        "server.servlet.session.cookie.secure=true"
+})
 class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -33,6 +40,13 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthenticationManager authenticationManager;
+
+    @Test
+    void appliesConfiguredSecureSameSiteSettingsToCsrfCookie() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/csrf"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("Secure")));
+    }
 
     @Test
     void loginPersistsSessionAndLogoutEndsIt() throws Exception {

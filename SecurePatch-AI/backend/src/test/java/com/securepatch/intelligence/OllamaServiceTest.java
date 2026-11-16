@@ -47,7 +47,7 @@ class OllamaServiceTest {
                         {"message":{"role":"assistant","content":"Evidence-based draft."}}
                         """, MediaType.APPLICATION_JSON));
 
-        OllamaExplanationResponse response = service.explain(new OllamaExplanationRequest(
+        OllamaExplanationResponse response = service.explain(new IntelligenceExplanationRequest(
                 "Summarize the risk.", "Caller-provided evidence.", List.of("NVD record")));
 
         assertThat(response.answer()).isEqualTo("Evidence-based draft.");

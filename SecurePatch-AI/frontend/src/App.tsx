@@ -34,15 +34,15 @@ import {
   analyzeDiagnostic,
   fetchCurrentAccount,
   fetchApiHealth,
-  fetchOllamaStatus,
-  requestOllamaExplanation,
+  fetchIntelligenceStatus,
+  requestIntelligenceExplanation,
   signIn,
   signOut,
   signUp,
   type Account,
   type DiagnosticResponse,
-  type OllamaExplanationResponse,
-  type OllamaStatus,
+  type IntelligenceExplanationResponse,
+  type IntelligenceStatus,
 } from './services/api'
 
 type NavItem = {
@@ -414,7 +414,7 @@ function App() {
             </motion.article>
           </section>
 
-          <OllamaWorkspace />
+          <IntelligenceWorkspace />
           </>
         ) : (
           <ModulePage page={activePage} onNavigate={navigateTo} />
@@ -823,28 +823,28 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
   )
 }
 
-function OllamaWorkspace() {
-  const [status, setStatus] = useState<OllamaStatus | null>(null)
+function IntelligenceWorkspace() {
+  const [status, setStatus] = useState<IntelligenceStatus | null>(null)
   const [statusError, setStatusError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [question, setQuestion] = useState('')
   const [evidence, setEvidence] = useState('')
   const [sourceReferences, setSourceReferences] = useState('')
   const [generating, setGenerating] = useState(false)
-  const [explanation, setExplanation] = useState<OllamaExplanationResponse | null>(null)
+  const [explanation, setExplanation] = useState<IntelligenceExplanationResponse | null>(null)
   const [explanationError, setExplanationError] = useState('')
 
   useEffect(() => {
     const controller = new AbortController()
     setRefreshing(true)
-    fetchOllamaStatus(controller.signal)
+    fetchIntelligenceStatus(controller.signal)
       .then((result) => {
         setStatus(result)
         setStatusError('')
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
-          setStatusError(error instanceof Error ? error.message : 'Could not check the local model.')
+          setStatusError(error instanceof Error ? error.message : 'Could not check the AI provider.')
         }
       })
       .finally(() => {
@@ -857,9 +857,9 @@ function OllamaWorkspace() {
     setRefreshing(true)
     setStatusError('')
     try {
-      setStatus(await fetchOllamaStatus())
+      setStatus(await fetchIntelligenceStatus())
     } catch (error) {
-      setStatusError(error instanceof Error ? error.message : 'Could not check the local model.')
+      setStatusError(error instanceof Error ? error.message : 'Could not check the AI provider.')
     } finally {
       setRefreshing(false)
     }
@@ -877,41 +877,59 @@ function OllamaWorkspace() {
 
     setGenerating(true)
     try {
-      setExplanation(await requestOllamaExplanation({
+      setExplanation(await requestIntelligenceExplanation({
         question: question.trim(),
         evidence: evidence.trim(),
         sourceReferences: sourceLabels,
       }))
     } catch (error) {
-      setExplanationError(error instanceof Error ? error.message : 'The local explanation request failed.')
+      setExplanationError(error instanceof Error ? error.message : 'The explanation request failed.')
     } finally {
       setGenerating(false)
     }
   }
 
-  const statusLabel = statusError
-    ? 'API unavailable'
-    : status?.state === 'READY'
-      ? 'Model ready'
-      : status?.state === 'DISABLED'
-        ? 'Not enabled'
-        : status?.state === 'MODEL_NOT_CONFIGURED'
-          ? 'Model not configured'
-          : status?.state === 'MODEL_NOT_INSTALLED'
-            ? 'Model not installed'
-            : status?.state === 'UNAVAILABLE'
-              ? 'Ollama unavailable'
-              : 'Checking status'
-  const statusTone = status?.available ? 'ready' : statusError || status?.state === 'UNAVAILABLE' ? 'offline' : 'pending'
+  const statusLabel = (() => {
+    if (statusError) return 'API unavailable'
+    switch (status?.state) {
+      case 'READY':
+        return 'Provider ready'
+      case 'DISABLED':
+        return 'Not enabled'
+      case 'API_KEY_NOT_CONFIGURED':
+        return 'API key missing'
+      case 'MODEL_NOT_CONFIGURED':
+        return 'Model not configured'
+      case 'MODEL_NOT_AVAILABLE':
+        return 'Model not available'
+      case 'MODEL_NOT_INSTALLED':
+        return 'Model not installed'
+      case 'UNAVAILABLE':
+        return 'Provider unavailable'
+      default:
+        return 'Checking status'
+    }
+  })()
+  const statusTone = status?.available
+    ? 'ready'
+    : statusError || status?.state === 'UNAVAILABLE' || status?.state === 'API_KEY_NOT_CONFIGURED'
+      ? 'offline'
+      : 'pending'
+  const providerName = status?.provider === 'OPENAI' ? 'OpenAI' : status?.provider === 'OLLAMA' ? 'Ollama' : 'AI'
+  const providerDescription = status?.provider === 'OPENAI'
+    ? 'The configured external provider receives this evidence; never include secrets.'
+    : status?.provider === 'OLLAMA'
+      ? 'The local model does not verify findings or sources.'
+      : 'Connect the backend to see provider details.'
 
   return (
-    <section className="panel ollama-panel" aria-labelledby="ollama-title">
+    <section className="panel ollama-panel" aria-labelledby="intelligence-title">
       <div className="ollama-heading">
         <div className="ollama-title-group">
           <span className="ollama-mark"><Bot size={19} /></span>
           <div>
-            <p className="panel-kicker">OLLAMA LOCAL MODEL · REQUIRED FOR AI</p>
-            <h2 id="ollama-title">Ask your local model</h2>
+            <p className="panel-kicker">SERVER-CONFIGURED AI PROVIDER</p>
+            <h2 id="intelligence-title">Ask your AI provider</h2>
           </div>
         </div>
         <div className="ollama-status-actions">
@@ -919,19 +937,19 @@ function OllamaWorkspace() {
             <i />
             {statusLabel}
           </span>
-          <button className="refresh-button" disabled={refreshing} onClick={refreshStatus} type="button" aria-label="Refresh Ollama status">
+          <button className="refresh-button" disabled={refreshing} onClick={refreshStatus} type="button" aria-label="Refresh AI provider status">
             <RefreshCw className={refreshing ? 'spinning' : ''} size={15} />
           </button>
         </div>
       </div>
 
       <p className="ollama-description">
-        Draft an explanation using evidence you provide. Ollama is required for this feature; drafts do not verify findings or sources.
+        Draft an explanation from evidence you provide. {providerDescription}
       </p>
 
       <div className="ollama-config-row">
-        <span><strong>Connection</strong>{statusError || status?.detail || 'Checking local Ollama configuration…'}</span>
-        <span><strong>Model</strong>{status?.model || 'Not configured'}</span>
+        <span><strong>Connection</strong>{statusError || status?.detail || 'Checking AI provider configuration…'}</span>
+        <span><strong>Provider / model</strong>{status ? `${providerName} · ${status.model || 'Not configured'}` : 'Checking configuration…'}</span>
       </div>
 
       <form className="ollama-form" onSubmit={generateExplanation}>
@@ -968,7 +986,7 @@ function OllamaWorkspace() {
           />
         </label>
         <div className="ollama-submit-row">
-          <span>Runs on your local Ollama model · up to 512 tokens · always requires human review</span>
+          <span>Uses the backend-configured {providerName} provider · up to 512 tokens · always requires human review</span>
           <button className="generate-button" disabled={generating} type="submit">
             {generating ? <RefreshCw className="spinning" size={15} /> : <Sparkles size={15} />}
             {generating ? 'Drafting…' : 'Generate draft'}

@@ -9,21 +9,29 @@ export type Account = {
   email: string
 }
 
-export type OllamaStatus = {
-  state: 'DISABLED' | 'MODEL_NOT_CONFIGURED' | 'MODEL_NOT_INSTALLED' | 'UNAVAILABLE' | 'READY'
+export type IntelligenceStatus = {
+  provider: 'OPENAI' | 'OLLAMA'
+  state:
+    | 'DISABLED'
+    | 'MODEL_NOT_CONFIGURED'
+    | 'MODEL_NOT_INSTALLED'
+    | 'API_KEY_NOT_CONFIGURED'
+    | 'MODEL_NOT_AVAILABLE'
+    | 'UNAVAILABLE'
+    | 'READY'
   enabled: boolean
   available: boolean
   model: string | null
   detail: string
 }
 
-export type OllamaExplanationRequest = {
+export type IntelligenceExplanationRequest = {
   question: string
   evidence: string
   sourceReferences: string[]
 }
 
-export type OllamaExplanationResponse = {
+export type IntelligenceExplanationResponse = {
   answer: string
   model: string
   verificationStatus: 'UNVERIFIED_DRAFT'
@@ -113,28 +121,32 @@ export async function signOut(): Promise<void> {
   if (!response.ok) throw await readError(response, 'Sign out')
 }
 
-export async function fetchOllamaStatus(signal?: AbortSignal): Promise<OllamaStatus> {
-  const response = await fetch('/api/v1/intelligence/ollama/status', { signal })
+export async function fetchIntelligenceStatus(signal?: AbortSignal): Promise<IntelligenceStatus> {
+  const response = await fetch('/api/v1/intelligence/status', { signal })
   if (!response.ok) {
-    throw await readError(response, 'Ollama status check')
+    throw await readError(response, 'AI provider status check')
   }
-  return response.json() as Promise<OllamaStatus>
+  return response.json() as Promise<IntelligenceStatus>
 }
 
-export async function requestOllamaExplanation(
-  request: OllamaExplanationRequest,
+export async function requestIntelligenceExplanation(
+  request: IntelligenceExplanationRequest,
   signal?: AbortSignal,
-): Promise<OllamaExplanationResponse> {
-  const response = await fetch('/api/v1/intelligence/ollama/explanations', {
+): Promise<IntelligenceExplanationResponse> {
+  const token = await csrfToken()
+  const response = await fetch('/api/v1/intelligence/explanations', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-XSRF-TOKEN': token,
+    },
     body: JSON.stringify(request),
     signal,
   })
   if (!response.ok) {
     throw await readError(response, 'Explanation request')
   }
-  return response.json() as Promise<OllamaExplanationResponse>
+  return response.json() as Promise<IntelligenceExplanationResponse>
 }
 
 export async function analyzeDiagnostic(
