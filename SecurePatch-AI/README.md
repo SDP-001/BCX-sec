@@ -151,6 +151,21 @@ frontend/   React, TypeScript, Vite, and Tailwind CSS
 compose.yaml
 ```
 
+## Design References for SecurePatch AI
+
+Study the following cybersecurity platforms for enterprise-grade dashboard layouts, vulnerability tables, risk visualization, scanner management, remediation workflows, and analytics:
+1. **Tenable** ([tenable.com](https://www.tenable.com/)): Vulnerability management dashboard structure, critical and high-risk vulnerability tracking, asset visibility, risk prioritization, remediation tracking.
+2. **Qualys VMDR** ([qualys.com](https://www.qualys.com/)): Vulnerability statistics, asset management, risk assessment, patch management, security reports.
+3. **Rapid7 InsightVM** ([rapid7.com](https://www.rapid7.com/)): Vulnerability prioritization, security analytics, risk-based assessment, remediation workflows.
+4. **Greenbone** ([greenbone.net](https://www.greenbone.net/)): Vulnerability scanning workflows, scan reports, security assessment.
+5. **OWASP ZAP** ([zaproxy.org](https://www.zaproxy.org/)): Web security scanning, vulnerability findings, scan history, real-time security alerts.
+
+**Suggested Architecture & Design Combination:**
+- **Main Dashboard**: Tenable structure (Continuous security posture, finding velocity, SLA health).
+- **Vulnerability Management & Remediation**: Qualys VMDR (Categorized vulnerabilities, severity matrix, virtual patching, patch deployment).
+- **Risk Analysis & Prioritization**: Rapid7 InsightVM (Risk score calculation, CVSS v3.1 + EPSS prioritization).
+- **Scanner Workflows**: Greenbone + OWASP ZAP (Pre-attack reconnaissance detection, in-flight exploit interception, heuristic diagnostics).
+
 The dashboard intentionally contains no seeded vulnerabilities or fabricated
 scanner results. Scanner execution must be added later with authorization
 checks, isolated execution, and explicit target validation.

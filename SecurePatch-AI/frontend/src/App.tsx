@@ -266,15 +266,17 @@ function App() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span
                   style={{
-                    background: '#ff5252',
-                    color: '#fff',
+                    background: 'linear-gradient(135deg, #ff1744 0%, #c62828 100%)',
+                    color: '#ffffff',
                     borderRadius: '50%',
                     padding: '8px',
                     display: 'grid',
                     placeItems: 'center',
+                    boxShadow: '0 0 12px rgba(255, 23, 68, 0.5)',
                   }}
+                  className="pulse-beacon-red"
                 >
-                  <ShieldAlert size={20} />
+                  <ShieldAlert size={20} color="#ffffff" />
                 </span>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -282,19 +284,18 @@ function App() {
                     <strong style={{ color: '#d32f2f', fontSize: '13px' }}>{liveAlarm.type}</strong>
                   </div>
                   <p style={{ margin: '3px 0 0', fontSize: '11px', color: 'var(--muted)' }}>
-                    Target: <code>{liveAlarm.target}</code> · Attacker IP: <code>{liveAlarm.attackerIp}</code> · Signature: <code>UNION SELECT schema exfiltration</code>
+                    Target: <code>{liveAlarm.target}</code> · Attacker IP: <span className="ip-badge-danger">{liveAlarm.attackerIp}</span> · Signature: <code>UNION SELECT schema exfiltration</code>
                   </p>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   type="button"
-                  className="primary-button"
-                  style={{ background: '#d32f2f', borderColor: '#b71c1c' }}
+                  className="danger-button"
                   onClick={handleSolveOverviewAlarm}
                   disabled={liveAlarm.solving}
                 >
-                  {liveAlarm.solving ? <LoaderCircle className="spinning" size={14} /> : <Zap size={14} />}
+                  {liveAlarm.solving ? <LoaderCircle className="spinning" size={14} color="#ffffff" /> : <Zap size={14} color="#ffffff" />}
                   <span>{liveAlarm.solving ? 'Neutralizing…' : '⚡ 1-Click Solve & Neutralize'}</span>
                 </button>
                 <button
@@ -952,22 +953,26 @@ function ThreatDefensePage({ onNavigate: _onNavigate }: { onNavigate?: (page: st
         <article className="metric-card">
           <div className="metric-top">
             <span className="metric-label">Active Attacks (While Attack)</span>
-            <span className="metric-icon" style={{ background: '#ffebee', color: '#c62828' }}><Zap size={16} /></span>
+            <span className="metric-icon" style={{ background: 'linear-gradient(135deg, #ff1744 0%, #c62828 100%)', color: '#ffffff', boxShadow: '0 0 10px rgba(255, 23, 68, 0.4)' }}>
+              <Zap size={16} color="#ffffff" />
+            </span>
           </div>
-          <div className="metric-value">{activeCount}</div>
+          <div className="metric-value" style={{ color: activeCount > 0 ? '#d32f2f' : 'inherit' }}>{activeCount}</div>
           <div className="metric-foot">
-            <span className="metric-foot-dot" />{activeCount > 0 ? 'Exploits intercepted in flight' : 'All active attacks neutralized'}
+            <span className="metric-foot-dot" style={{ background: activeCount > 0 ? '#ff1744' : '#2e7d32' }} />{activeCount > 0 ? 'Exploits intercepted in flight' : 'All active attacks neutralized'}
           </div>
         </article>
 
         <article className="metric-card">
           <div className="metric-top">
             <span className="metric-label">Pre-Attack Probes (Before Attack)</span>
-            <span className="metric-icon" style={{ background: '#fff8e1', color: '#f57f17' }}><Radar size={16} /></span>
+            <span className="metric-icon" style={{ background: 'linear-gradient(135deg, #fb8c00 0%, #ef6c00 100%)', color: '#ffffff', boxShadow: '0 0 10px rgba(251, 140, 0, 0.4)' }}>
+              <Radar size={16} color="#ffffff" />
+            </span>
           </div>
-          <div className="metric-value">{preCount}</div>
+          <div className="metric-value" style={{ color: preCount > 0 ? '#f57f17' : 'inherit' }}>{preCount}</div>
           <div className="metric-foot">
-            <span className="metric-foot-dot" />{preCount > 0 ? 'Reconnaissance scans detected' : 'Perimeter fully hardened'}
+            <span className="metric-foot-dot" style={{ background: preCount > 0 ? '#fb8c00' : '#2e7d32' }} />{preCount > 0 ? 'Reconnaissance scans detected' : 'Perimeter fully hardened'}
           </div>
         </article>
 
@@ -1020,9 +1025,9 @@ function ThreatDefensePage({ onNavigate: _onNavigate }: { onNavigate?: (page: st
           {activeAttacks.map((attack) => (
             <article
               key={attack.id}
-              className="panel"
+              className={attack.status === 'ATTACKING' ? 'panel threat-card-active' : 'panel'}
               style={{
-                borderLeft: attack.status === 'ATTACKING' ? '4px solid #ff5252' : '4px solid #4caf50',
+                borderLeft: attack.status === 'ATTACKING' ? '4px solid #ff1744' : '4px solid #4caf50',
                 padding: '18px',
               }}
             >
@@ -1032,7 +1037,7 @@ function ThreatDefensePage({ onNavigate: _onNavigate }: { onNavigate?: (page: st
                     {attack.status === 'ATTACKING' ? (
                       <span className="stage-tag active">ACTIVE ATTACK IN PROGRESS</span>
                     ) : (
-                      <span className="stage-tag solved"><CheckCircle2 size={12} /> ATTACK NEUTRALIZED & SOLVED</span>
+                      <span className="stage-tag solved"><CheckCircle2 size={12} color="#ffffff" /> ATTACK NEUTRALIZED & SOLVED</span>
                     )}
                     <span className="status-badge critical">{attack.severity}</span>
                     <span style={{ fontSize: '10px', color: 'var(--muted)', fontFamily: 'monospace' }}>ID: {attack.id}</span>
@@ -1044,12 +1049,11 @@ function ThreatDefensePage({ onNavigate: _onNavigate }: { onNavigate?: (page: st
                   {attack.status === 'ATTACKING' ? (
                     <button
                       type="button"
-                      className="primary-button"
-                      style={{ background: '#d32f2f', borderColor: '#b71c1c' }}
+                      className="danger-button"
                       onClick={() => handleSolveActive(attack)}
                       disabled={attack.solving}
                     >
-                      {attack.solving ? <LoaderCircle className="spinning" size={14} /> : <Zap size={14} />}
+                      {attack.solving ? <LoaderCircle className="spinning" size={14} color="#ffffff" /> : <Zap size={14} color="#ffffff" />}
                       <span>{attack.solving ? 'Neutralizing…' : '⚡ Solve Threat (Auto-Block & Patch)'}</span>
                     </button>
                   ) : (
@@ -1065,15 +1069,15 @@ function ThreatDefensePage({ onNavigate: _onNavigate }: { onNavigate?: (page: st
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginTop: '14px', padding: '10px', background: 'var(--soft)', borderRadius: '6px', fontSize: '11px' }}>
-                <div><strong>Attacker IP:</strong> <code style={{ color: '#d32f2f' }}>{attack.attackerIp}</code></div>
+                <div><strong>Attacker IP:</strong> <span className="ip-badge-danger">{attack.attackerIp}</span></div>
                 <div><strong>Target Endpoint:</strong> <code>{attack.target}</code></div>
                 <div><strong>Exploit Signature:</strong> <code>{attack.signature}</code></div>
-                <div><strong>Status:</strong> {attack.status === 'ATTACKING' ? <span style={{ color: '#d32f2f', fontWeight: 600 }}>Intercepted & Blockable</span> : <span style={{ color: '#2e7d32', fontWeight: 600 }}>Firewall Drop & Patched</span>}</div>
+                <div><strong>Status:</strong> {attack.status === 'ATTACKING' ? <span className="status-live-danger">Intercepted & Blockable</span> : <span style={{ color: '#2e7d32', fontWeight: 800 }}>Firewall Drop & Patched</span>}</div>
               </div>
 
               <div style={{ marginTop: '12px' }}>
-                <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Intercepted Payload</div>
-                <div style={{ padding: '8px 12px', background: '#13141f', color: '#ff8a80', borderRadius: '6px', fontFamily: 'monospace', fontSize: '11px', overflowX: 'auto', border: '1px solid #2a2233' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Intercepted Payload</div>
+                <div className="payload-box-active">
                   {attack.payload}
                 </div>
               </div>
@@ -1133,12 +1137,11 @@ function ThreatDefensePage({ onNavigate: _onNavigate }: { onNavigate?: (page: st
                   {item.status === 'EXPOSED' ? (
                     <button
                       type="button"
-                      className="primary-button"
-                      style={{ background: '#f57f17', borderColor: '#e65100' }}
+                      className="warning-button"
                       onClick={() => handleSolvePre(item)}
                       disabled={item.solving}
                     >
-                      {item.solving ? <LoaderCircle className="spinning" size={14} /> : <ShieldCheck size={14} />}
+                      {item.solving ? <LoaderCircle className="spinning" size={14} color="#ffffff" /> : <ShieldCheck size={14} color="#ffffff" />}
                       <span>{item.solving ? 'Hardening…' : '🛡️ Solve & Auto-Harden'}</span>
                     </button>
                   ) : (
@@ -1154,9 +1157,9 @@ function ThreatDefensePage({ onNavigate: _onNavigate }: { onNavigate?: (page: st
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginTop: '14px', padding: '10px', background: 'var(--soft)', borderRadius: '6px', fontSize: '11px' }}>
-                <div><strong>Source:</strong> <code style={{ color: '#f57f17' }}>{item.attackerIp}</code></div>
+                <div><strong>Source:</strong> <code style={{ color: '#e65100', fontWeight: 700 }}>{item.attackerIp}</code></div>
                 <div><strong>Target Asset:</strong> <code>{item.target}</code></div>
-                <div><strong>Status:</strong> {item.status === 'EXPOSED' ? <span style={{ color: '#f57f17', fontWeight: 600 }}>Exposed to Recon</span> : <span style={{ color: '#2e7d32', fontWeight: 600 }}>Hardened & Protected</span>}</div>
+                <div><strong>Status:</strong> {item.status === 'EXPOSED' ? <span style={{ color: '#e65100', fontWeight: 800 }}>Exposed to Recon</span> : <span style={{ color: '#2e7d32', fontWeight: 800 }}>Hardened & Protected</span>}</div>
               </div>
 
               {expandedSolutions[item.id] && (
@@ -1301,12 +1304,11 @@ function ThreatDefensePage({ onNavigate: _onNavigate }: { onNavigate?: (page: st
                 {simResult.attackStage !== 'BENIGN' && !simSolved && (
                   <button
                     type="button"
-                    className="primary-button"
-                    style={{ background: '#5965ed' }}
+                    className="danger-button"
                     onClick={handleSolveSimulator}
                     disabled={simSolving}
                   >
-                    {simSolving ? <LoaderCircle className="spinning" size={14} /> : <Zap size={14} />}
+                    {simSolving ? <LoaderCircle className="spinning" size={14} color="#ffffff" /> : <Zap size={14} color="#ffffff" />}
                     <span>{simSolving ? 'Mitigating…' : '⚡ Solve Threat (Deploy Defense)'}</span>
                   </button>
                 )}
@@ -1314,7 +1316,7 @@ function ThreatDefensePage({ onNavigate: _onNavigate }: { onNavigate?: (page: st
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginTop: '14px', padding: '10px', background: 'var(--soft)', borderRadius: '6px', fontSize: '11px' }}>
                 <div><strong>Signature:</strong> <code>{simResult.detectionRule}</code></div>
-                <div><strong>Attacker IP:</strong> <code style={{ color: '#d32f2f' }}>{simResult.attackerIp}</code></div>
+                <div><strong>Attacker IP:</strong> <span className="ip-badge-danger">{simResult.attackerIp}</span></div>
                 <div><strong>Target:</strong> <code>{simResult.targetEndpoint}</code></div>
                 <div><strong>Recommended Action:</strong> <code>{simResult.mitigationAction}</code></div>
               </div>
