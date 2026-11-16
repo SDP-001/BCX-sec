@@ -1,11 +1,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
 import handler from '../src/server/apiProxy.js'
-import healthRoute from '../api/v1/health.js'
-import authRoute from '../api/v1/auth/[endpoint].js'
-import intelligenceRoute from '../api/v1/intelligence/[endpoint].js'
-import ollamaRoute from '../api/v1/intelligence/ollama/[endpoint].js'
-import diagnosticsRoute from '../api/v1/diagnostics/analyze.js'
+import proxyRoute from '../api/proxy.js'
 
 const originalBackendUrl = process.env.BACKEND_API_URL
 const originalFetch = globalThis.fetch
@@ -42,17 +38,19 @@ afterEach(() => {
   globalThis.fetch = originalFetch
 })
 
-test('exports proxy handlers for every nested API route', () => {
-  for (const route of [healthRoute, authRoute, intelligenceRoute, ollamaRoute, diagnosticsRoute]) {
-    assert.equal(typeof route, 'function')
-  }
+test('exports a top-level Vercel proxy function', () => {
+  assert.equal(proxyRoute, handler)
 })
 
 test('reports an explicit configuration error when the backend URL is missing', async () => {
   delete process.env.BACKEND_API_URL
   const response = createResponse()
 
-  await handler({ method: 'GET', query: { path: ['v1', 'health'] }, url: '/api/v1/health' }, response)
+  await handler({
+    method: 'GET',
+    query: { __proxy_path: 'v1/health' },
+    url: '/api/proxy?__proxy_path=v1%2Fhealth',
+  }, response)
 
   assert.equal(response.statusCode, 503)
   assert.match(response.body.message, /backend API is not configured/)
@@ -77,8 +75,8 @@ test('forwards API requests and cookies without forwarding client-supplied API k
 
   await handler({
     method: 'POST',
-    query: { path: ['v1', 'auth', 'login'] },
-    url: '/api/v1/auth/login?source=web',
+    query: { __proxy_path: 'v1/auth/login' },
+    url: '/api/proxy?__proxy_path=v1%2Fauth%2Flogin&source=web',
     headers: {
       'content-type': 'application/json',
       cookie: 'XSRF-TOKEN=csrf',
@@ -104,19 +102,27 @@ test('forwards API requests and cookies without forwarding client-supplied API k
 test('rejects insecure backend URLs and unsupported methods', async () => {
   process.env.BACKEND_API_URL = 'http://api.example.test'
   const insecureResponse = createResponse()
-  await handler({ method: 'GET', query: { path: ['v1', 'health'] }, url: '/api/v1/health' }, insecureResponse)
+  await handler({
+    method: 'GET',
+    query: { __proxy_path: 'v1/health' },
+    url: '/api/proxy?__proxy_path=v1%2Fhealth',
+  }, insecureResponse)
   assert.equal(insecureResponse.statusCode, 500)
 
   process.env.BACKEND_API_URL = 'https://api.example.test'
   const methodResponse = createResponse()
-  await handler({ method: 'DELETE', query: { path: ['v1', 'health'] }, url: '/api/v1/health' }, methodResponse)
+  await handler({
+    method: 'DELETE',
+    query: { __proxy_path: 'v1/health' },
+    url: '/api/proxy?__proxy_path=v1%2Fhealth',
+  }, methodResponse)
   assert.equal(methodResponse.statusCode, 405)
 
   const traversalResponse = createResponse()
   await handler({
     method: 'GET',
-    query: { path: ['..', 'actuator', 'env'] },
-    url: '/api/%252e%252e/actuator/env',
+    query: { __proxy_path: 'v1/%2e%2e/actuator/env' },
+    url: '/api/proxy?__proxy_path=v1%2F%252e%252e%2Factuator%2Fenv',
   }, traversalResponse)
   assert.equal(traversalResponse.statusCode, 400)
 })

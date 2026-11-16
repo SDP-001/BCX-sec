@@ -27,16 +27,20 @@ export default async function handler(request, response) {
   }
 
   const requestUrl = new URL(request.url ?? '/', 'https://vercel.invalid')
-  if (!requestUrl.pathname.startsWith('/api/')) {
-    return response.status(404).json({ message: 'The API route was not found.' })
-  }
   let pathSegments
   try {
-    pathSegments = requestUrl.pathname.slice('/api/'.length).split('/').map(decodeURIComponent)
+    const rewrittenPath = request.query?.__proxy_path
+    if (typeof rewrittenPath === 'string') {
+      pathSegments = rewrittenPath.split('/').map(decodeURIComponent)
+    } else if (Array.isArray(rewrittenPath)) {
+      pathSegments = rewrittenPath.flatMap((segment) => segment.split('/')).map(decodeURIComponent)
+    } else {
+      return response.status(404).json({ message: 'The API route was not found.' })
+    }
   } catch {
     return response.status(400).json({ message: 'The API path is invalid.' })
   }
-  const invalidPath = pathSegments.length === 0 || pathSegments.some((segment) => {
+  const invalidPath = pathSegments.length < 2 || pathSegments[0] !== 'v1' || pathSegments.some((segment) => {
     return typeof segment !== 'string'
       || !segment
       || segment === '.'
@@ -49,8 +53,11 @@ export default async function handler(request, response) {
     return response.status(400).json({ message: 'The API path is invalid.' })
   }
 
+  const forwardedSearch = new URLSearchParams(requestUrl.searchParams)
+  forwardedSearch.delete('__proxy_path')
+  const query = forwardedSearch.toString()
   const upstreamUrl = new URL(
-    `/api/${pathSegments.map((segment) => encodeURIComponent(segment)).join('/')}${requestUrl.search}`,
+    `/api/${pathSegments.map((segment) => encodeURIComponent(segment)).join('/')}${query ? `?${query}` : ''}`,
     backend.origin,
   )
   const headers = new Headers()
