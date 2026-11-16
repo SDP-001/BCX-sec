@@ -190,6 +190,11 @@ function App() {
                 >
                   <Icon size={17} strokeWidth={1.8} />
                   <span>{label}</span>
+                  {label === 'Threat defense' && liveAlarm.active && (
+                    <span className="nav-badge-alert" title="Live attack in progress">
+                      LIVE
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -237,7 +242,7 @@ function App() {
           <>
           <section className="welcome-row">
             <div>
-              <div className="eyebrow"><span className="eyebrow-line" /> CONTINUOUS SECURITY POSTURE</div>
+              <div className="eyebrow"><span className="live-status-ring" /><span className="eyebrow-line" /> CONTINUOUS SECURITY POSTURE</div>
               <h1>Welcome back, <span>{account.displayName}</span></h1>
               <p className="welcome-copy">14 monitored assets · 28 active findings · 3 critical SLAs active.</p>
             </div>
@@ -408,8 +413,8 @@ function App() {
                     ].map((item) => (
                       <div key={item.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                         <div style={{ width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '3px', height: '80px' }}>
-                          <div style={{ width: '8px', height: `${item.found * 12}px`, background: '#8caee0', borderRadius: '3px 3px 0 0' }} title={`Found: ${item.found}`} />
-                          <div style={{ width: '8px', height: `${item.fixed * 12}px`, background: '#5965ed', borderRadius: '3px 3px 0 0' }} title={`Remediated: ${item.fixed}`} />
+                          <div className="chart-bar-interactive" style={{ width: '8px', height: `${item.found * 12}px`, background: '#8caee0', borderRadius: '3px 3px 0 0' }} title={`Found: ${item.found}`} />
+                          <div className="chart-bar-interactive" style={{ width: '8px', height: `${item.fixed * 12}px`, background: '#5965ed', borderRadius: '3px 3px 0 0' }} title={`Remediated: ${item.fixed}`} />
                         </div>
                         <span style={{ fontSize: '9px', color: 'var(--muted)', fontFamily: 'monospace' }}>{item.day}</span>
                       </div>
@@ -1936,7 +1941,7 @@ function ScanActivityPage({ onNavigate: _onNavigate }: { onNavigate?: (page: str
             </div>
             <div className="progress-bar-wrap">
               <div
-                className="progress-bar-fill"
+                className={`progress-bar-fill ${scan.status === 'RUNNING' ? 'scan-progress-active' : ''}`}
                 style={{
                   width: `${scan.progress}%`,
                   background: scan.status === 'COMPLETED' ? '#5965ed' : scan.status === 'RUNNING' ? '#2e7d32' : '#8caee0',

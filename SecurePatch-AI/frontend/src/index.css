@@ -725,3 +725,144 @@ h2 { margin: 0; color: var(--ink); font: 650 13px Manrope,sans-serif; letter-spa
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04), -3px 0 10px rgba(255, 23, 68, 0.25);
   }
 }
+
+/* ==========================================================================
+   ENTERPRISE CYBERSECURITY PLATFORM ANIMATIONS & VISUAL POLISH
+   (Inspired by Tenable, Qualys VMDR, Rapid7 InsightVM, Greenbone, OWASP ZAP)
+   ========================================================================== */
+
+/* 1. Live Telemetry & Continuous Security Posture Beacon */
+.live-status-ring {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2e7d32;
+  box-shadow: 0 0 6px #2e7d32;
+  margin-right: 6px;
+  animation: livePing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  vertical-align: middle;
+}
+
+@keyframes livePing {
+  0% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.7); }
+  70% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 0 6px rgba(46, 125, 50, 0); }
+  100% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 0 0 rgba(46, 125, 50, 0); }
+}
+
+/* Sidebar Live Threat Alert Pill */
+.nav-badge-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  background: #ff1744;
+  color: #ffffff !important;
+  border-radius: 10px;
+  font: 800 8px 'DM Mono', monospace;
+  letter-spacing: 0.5px;
+  margin-left: auto;
+  box-shadow: 0 0 8px rgba(255, 23, 68, 0.5);
+  animation: alertPulse 1.6s infinite ease-in-out;
+}
+
+@keyframes alertPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.7); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(255, 23, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); }
+}
+
+/* 2. Greenbone & OWASP ZAP Active Scanner Wave */
+.scan-progress-active {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.25) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0.25) 75%,
+    transparent 75%,
+    transparent
+  ) !important;
+  background-size: 24px 24px !important;
+  animation: scanBarWave 1.2s linear infinite !important;
+}
+
+@keyframes scanBarWave {
+  0% { background-position: 0 0; }
+  100% { background-position: 24px 0; }
+}
+
+/* 3. Tenable Telemetry Chart Interactive Hover & Glow */
+.chart-bar-interactive {
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom;
+  cursor: pointer;
+}
+.chart-bar-interactive:hover {
+  transform: scaleY(1.08) scaleX(1.2);
+  filter: brightness(1.2) drop-shadow(0 2px 8px rgba(89, 101, 237, 0.5));
+}
+
+/* 4. Qualys & Rapid7 SLA Urgent Timer Animation */
+.sla-indicator.urgent {
+  animation: urgentBlink 2.2s infinite ease-in-out;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(211, 47, 47, 0.08);
+}
+.dark-theme .sla-indicator.urgent {
+  background: rgba(255, 107, 107, 0.12);
+}
+
+@keyframes urgentBlink {
+  0% { opacity: 0.85; filter: drop-shadow(0 0 0 rgba(211, 47, 47, 0.4)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 6px rgba(211, 47, 47, 0.7)); }
+  100% { opacity: 0.85; filter: drop-shadow(0 0 0 rgba(211, 47, 47, 0.4)); }
+}
+
+/* 5. Enterprise Card Micro-Interactions */
+.metric-card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease !important;
+}
+.metric-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(34, 37, 70, 0.08);
+  border-color: #c9cdf5;
+}
+.dark-theme .metric-card:hover {
+  border-color: #555c91;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.panel {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.panel:hover {
+  border-color: #d1d5fa;
+}
+.dark-theme .panel:hover {
+  border-color: #3f4675;
+}
+
+/* Severity badge hover micro-glow */
+.severity-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font: 700 8px 'DM Mono', monospace;
+  text-transform: uppercase;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.severity-badge:hover {
+  transform: scale(1.06);
+}
+.severity-badge.critical { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; box-shadow: 0 0 6px rgba(211, 47, 47, 0.25); }
+.severity-badge.high { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; box-shadow: 0 0 6px rgba(230, 81, 0, 0.25); }
+.severity-badge.medium { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+.severity-badge.low { background: #f1f8e9; color: #33691e; border: 1px solid #c5e1a5; }
+
+.dark-theme .severity-badge.critical { background: #4a1515; color: #ff8a80; border-color: #7f1d1d; }
+.dark-theme .severity-badge.high { background: #42240b; color: #ffb74d; border-color: #6e390c; }
+.dark-theme .severity-badge.medium { background: #132a48; color: #90caf9; border-color: #1e416e; }
+.dark-theme .severity-badge.low { background: #1b381e; color: #a5d6a7; border-color: #27542c; }
