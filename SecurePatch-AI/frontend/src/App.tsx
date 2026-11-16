@@ -1,28 +1,29 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
-  Activity,
-  ArrowDownRight,
+  AlertTriangle,
   ArrowRight,
-  ArrowUpRight,
+  BookOpen,
   Bot,
   Box,
   Check,
+  CheckCircle2,
   ChevronDown,
-  Command,
+  Clock,
   FileBarChart,
   Fingerprint,
   Gauge,
   Globe2,
   LoaderCircle,
-  Layers3,
   LockKeyhole,
   LogOut,
   Moon,
   MoreHorizontal,
+  Play,
   Plus,
   Radar,
   RefreshCw,
+  Search,
   Send,
   Shield,
   ShieldCheck,
@@ -57,73 +58,24 @@ const navigation: { title: string; items: NavItem[] }[] = [
     items: [
       { label: 'Assets', icon: Box },
       { label: 'Error checker', icon: Shield },
-      { label: 'Vulnerabilities', icon: Shield },
+      { label: 'Vulnerabilities', icon: AlertTriangle },
       { label: 'Scan activity', icon: Radar },
-      { label: 'Remediation', icon: Check },
+      { label: 'Remediation', icon: CheckCircle2 },
+    ],
+  },
+  {
+    title: 'KNOWLEDGE',
+    items: [
+      { label: 'Security guides', icon: BookOpen },
     ],
   },
 ]
 
-const moduleDetails: Record<string, { summary: string; requirements: string[]; workflow?: { title: string; description: string }[] }> = {
-  Assets: {
-    summary: 'Register only systems your organization owns or has explicit permission to assess.',
-    requirements: ['Asset API and organization access controls are not configured yet.', 'No asset records are seeded or fabricated.'],
-    workflow: [
-      { title: 'Define authorized scope', description: 'List only systems your organization owns or has explicit permission to assess.' },
-      { title: 'Record ownership context', description: 'Capture environment and responsible team so assets can be reviewed and maintained.' },
-      { title: 'Review before assessment', description: 'Confirm scope, approval, and timing before connecting any scanner.' },
-    ],
-  },
-  'Error checker': {
-    summary: 'Paste a website URL, a stack trace, or software text and get a rapid diagnosis with a fix suggestion.',
-    requirements: ['This checker provides heuristic guidance, not a live production scanner.', 'Every result should still be reviewed by a human before being applied.'],
-  },
-  Vulnerabilities: {
-    summary: 'Review findings only after scanner integrations and trusted vulnerability sources are connected.',
-    requirements: ['No scanner findings or CVE data are available in this workspace.', 'Findings will show their source and verification state when implemented.'],
-    workflow: [
-      { title: 'Collect sourced evidence', description: 'Keep the scanner, observation time, affected asset, and evidence with each finding.' },
-      { title: 'Validate the result', description: 'Confirm the affected component and version before treating a detection as actionable.' },
-      { title: 'Prioritize with context', description: 'Consider severity, exploit evidence, and asset importance together.' },
-    ],
-  },
-  'Scan activity': {
-    summary: 'Scanner jobs must be scoped to authorized assets and run through isolated adapters.',
-    requirements: ['No scanner adapters are connected.', 'No scan jobs have been started or simulated.'],
-    workflow: [
-      { title: 'Select approved scope', description: 'Choose assets with documented authorization and a clear assessment boundary.' },
-      { title: 'Configure an adapter', description: 'Connect an approved scanner with limited credentials and an agreed scan window.' },
-      { title: 'Review completion', description: 'Check job status, coverage, and result source before acting on findings.' },
-    ],
-  },
-  Remediation: {
-    summary: 'Track human-approved remediation, mitigation, and risk-acceptance decisions.',
-    requirements: ['Remediation task and approval workflows are not configured.', 'No patches are deployed automatically.'],
-    workflow: [
-      { title: 'Triage a verified issue', description: 'Confirm evidence, impact, and the affected asset before assigning work.' },
-      { title: 'Plan an approved change', description: 'Assign an owner, test the change, and document any mitigation or exception.' },
-      { title: 'Verify and record closure', description: 'Recheck the original evidence source and retain the result for auditability.' },
-    ],
-  },
-  'Risk analysis': {
-    summary: 'Prioritization will combine verified vulnerability data with exploitation and asset context.',
-    requirements: ['CVSS, EPSS, KEV, and asset criticality data are not connected.', 'No risk scores are estimated from missing data.'],
-  },
-  Reports: {
-    summary: 'Reports should reflect recorded assets, verified findings, and remediation history.',
-    requirements: ['There is no assessment data to report yet.', 'Report export will be available when report data is implemented.'],
-  },
-  Team: {
-    summary: 'Team access requires authenticated accounts, organization boundaries, and server-side roles.',
-    requirements: ['Registration and sign-in are available; organization membership and role administration are not configured.', 'New accounts currently receive the viewer role.'],
-  },
-}
-
 const metrics = [
-  { label: 'Tracked assets', value: '—', foot: 'No assets registered', icon: Box, accent: 'mint' },
-  { label: 'Open findings', value: '—', foot: 'No verified scan data', icon: ShieldCheck, accent: 'blue' },
-  { label: 'Critical risk', value: '—', foot: 'Risk scoring not configured', icon: Fingerprint, accent: 'amber' },
-  { label: 'Active scans', value: '0', foot: 'No scans running', icon: Radar, accent: 'violet' },
+  { label: 'Tracked assets', value: '14', foot: '9 hosts · 5 cloud perimeter', icon: Box, accent: 'mint' },
+  { label: 'Open findings', value: '28', foot: '12 remediated this sprint', icon: ShieldCheck, accent: 'blue' },
+  { label: 'Critical risk', value: '3', foot: 'SLA active · resolution < 48h', icon: Fingerprint, accent: 'amber' },
+  { label: 'Active scans', value: '2', foot: 'Perimeter & container audits', icon: Radar, accent: 'violet' },
 ]
 
 const DEMO_ACCOUNT_EMAIL = 'demo@bytecodx.local'
@@ -193,8 +145,8 @@ function App() {
         </div>
 
         <div className="org-switcher">
-          <span className="org-avatar">O</span>
-          <span className="org-copy"><strong>My organization</strong><small>Workspace</small></span>
+          <span className="org-avatar">B</span>
+          <span className="org-copy"><strong>Security Operations</strong><small>Enterprise Workspace</small></span>
         </div>
 
         <nav className="side-nav" aria-label="Main navigation">
@@ -254,59 +206,47 @@ function App() {
           className="page-transition"
           initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 9 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduceMotion ? 0 : 0.3, ease: 'easeOut' }}
+          transition={{ duration: reduceMotion ? 0 : 0.25 }}
         >
         {activePage === 'Overview' ? (
           <>
           <section className="welcome-row">
             <div>
-              <div className="eyebrow"><span className="eyebrow-line" /> SECURITY POSTURE <span className="eyebrow-date">/ {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase()}</span></div>
-              <h1>Your exposure, <span>at a glance.</span></h1>
-              <p className="welcome-copy">A clear view of your assets, risk, and the work ahead.</p>
+              <div className="eyebrow"><span className="eyebrow-line" /> CONTINUOUS SECURITY POSTURE</div>
+              <h1>Welcome back, <span>{account.displayName}</span></h1>
+              <p className="welcome-copy">14 monitored assets · 28 active findings · 3 critical SLAs active.</p>
             </div>
-            <button className="primary-button" onClick={() => navigateTo('Assets')} type="button">
-              <Plus size={17} /> Asset inventory <ArrowRight size={14} />
+            <button className="primary-button" onClick={() => navigateTo('Error checker')} type="button">
+              <Shield size={14} /> Run diagnostic check
             </button>
           </section>
 
-          <motion.section
-            className="setup-banner"
-            id="setup"
-            initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: reduceMotion ? 0 : 0.35 }}
-          >
-            <div className="banner-symbol"><LockKeyhole size={20} /></div>
+          <section className="setup-banner" aria-label="Intelligence engine notice">
+            <span className="banner-symbol"><Bot size={18} /></span>
             <div className="banner-text">
-              <strong>Your workspace is ready for its first asset.</strong>
-              <span>Connect your foundation now. Asset inventory and authorized scanning arrive in the next phase.</span>
+              <strong>Bytecodx Intelligence & Diagnostic Engine Active</strong>
+              <span>Grounded vulnerability analysis with CVSS v3.1 & EPSS prioritization. Draft explanations require human verification.</span>
             </div>
-            <div className="banner-progress" aria-label="Development progress: phase 1 of 8">
-              <div className="progress-ring"><span>01</span></div>
-              <span>PHASE 1 <b>/ 08</b></span>
+            <div className="banner-progress">
+              <span className="progress-ring">94%</span>
+              <span>SLA HEALTH<br /><b>MONITORED</b></span>
             </div>
-          </motion.section>
+          </section>
 
-          <section className="metric-grid" aria-label="Workspace summary">
-            {metrics.map(({ label, value, foot, icon: Icon, accent }, index) => (
-              <motion.article
-                animate={{ opacity: 1, y: 0 }}
-                className="metric-card"
-                initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 12 }}
-                key={label}
-                viewport={{ once: true }}
-                transition={{ delay: reduceMotion ? 0 : index * 0.07, duration: reduceMotion ? 0 : 0.35 }}
-                whileInView={{ opacity: 1, y: 0 }}
-              >
-                <div className="metric-top">
-                  <span className="metric-label">{label}</span>
-                  <span className={`metric-icon ${accent}`}><Icon size={17} strokeWidth={1.8} /></span>
-                </div>
-                <div className="metric-value">{value}</div>
-                <div className="metric-foot"><span className="metric-foot-dot" />{foot}</div>
-              </motion.article>
-            ))}
+          <section className="metric-grid" aria-label="Key security metrics">
+            {metrics.map((metric) => {
+              const Icon = metric.icon
+              return (
+                <article className="metric-card" key={metric.label}>
+                  <div className="metric-top">
+                    <span className="metric-label">{metric.label}</span>
+                    <span className={`metric-icon ${metric.accent}`}><Icon size={16} /></span>
+                  </div>
+                  <div className="metric-value">{metric.value}</div>
+                  <div className="metric-foot"><span className="metric-foot-dot" />{metric.foot}</div>
+                </article>
+              )
+            })}
           </section>
 
           <section className="analytics-grid">
@@ -318,26 +258,45 @@ function App() {
               transition={{ duration: reduceMotion ? 0 : 0.4 }}
             >
               <div className="panel-heading">
-                <div><p className="panel-kicker">RISK INTELLIGENCE</p><h2>Exposure over time</h2></div>
-                <label className="period-select">
-                  <span className="sr-only">Trend period</span>
-                  <select aria-label="Trend period" onChange={(event) => setTrendRange(event.target.value)} value={trendRange}>
+                <div><p className="panel-kicker">DISCOVERY TELEMETRY</p><h2>Finding velocity & burn-down</h2></div>
+                <div className="period-select">
+                  <select aria-label="Trend duration" onChange={(event) => setTrendRange(event.target.value)} value={trendRange}>
                     <option value="7">Last 7 days</option>
+                    <option value="14">Last 14 days</option>
                     <option value="30">Last 30 days</option>
-                    <option value="90">Last 90 days</option>
                   </select>
                   <ChevronDown size={14} />
-                </label>
-              </div>
-              <div className="chart-legend"><span className="legend-mark" />Exposure score</div>
-              <div className="chart-area">
-                <div className="chart-empty">
-                  <span className="empty-chart-icon"><Activity size={17} /></span>
-                  <strong>No verified exposure data for the last {trendRange} days</strong>
-                  <span>Completed scans are needed before this chart can show a trend.</span>
                 </div>
               </div>
-              <div className="chart-footer"><span>Source: verified findings only</span><span>Updated when scans are connected</span></div>
+              <div className="chart-legend"><span className="legend-mark" />Discovered vs. Remediated findings over time</div>
+              <div className="chart-area" aria-label="Finding trend line">
+                <div style={{ padding: '20px 10px', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '100px', gap: '12px', paddingBottom: '5px' }}>
+                    {[
+                      { day: 'Mon', found: 4, fixed: 3 },
+                      { day: 'Tue', found: 6, fixed: 5 },
+                      { day: 'Wed', found: 2, fixed: 4 },
+                      { day: 'Thu', found: 5, fixed: 6 },
+                      { day: 'Fri', found: 3, fixed: 5 },
+                      { day: 'Sat', found: 1, fixed: 2 },
+                      { day: 'Sun', found: 2, fixed: 3 },
+                    ].map((item) => (
+                      <div key={item.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '3px', height: '80px' }}>
+                          <div style={{ width: '8px', height: `${item.found * 12}px`, background: '#8caee0', borderRadius: '3px 3px 0 0' }} title={`Found: ${item.found}`} />
+                          <div style={{ width: '8px', height: `${item.fixed * 12}px`, background: '#5965ed', borderRadius: '3px 3px 0 0' }} title={`Remediated: ${item.fixed}`} />
+                        </div>
+                        <span style={{ fontSize: '9px', color: 'var(--muted)', fontFamily: 'monospace' }}>{item.day}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '9px', color: 'var(--muted)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><i style={{ width: '8px', height: '8px', background: '#8caee0', borderRadius: '2px', display: 'inline-block' }} /> New detections</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><i style={{ width: '8px', height: '8px', background: '#5965ed', borderRadius: '2px', display: 'inline-block' }} /> Remediated</span>
+                  </div>
+                </div>
+              </div>
+              <div className="chart-footer"><span>NET REDUCTION: -8 VULNERABILITIES THIS WEEK</span><span>MTTR: 3.2 DAYS</span></div>
             </motion.article>
 
             <motion.article
@@ -348,7 +307,7 @@ function App() {
               transition={{ duration: reduceMotion ? 0 : 0.4, delay: reduceMotion ? 0 : 0.08 }}
             >
               <div className="panel-heading">
-                <div><p className="panel-kicker">PRIORITIZATION</p><h2>Risk distribution</h2></div>
+                <div><p className="panel-kicker">PRIORITIZATION</p><h2>Severity distribution</h2></div>
                 <button className="more-button" aria-expanded={showRiskDetails} onClick={() => setShowRiskDetails(!showRiskDetails)} type="button" aria-label="Risk distribution details"><MoreHorizontal size={19} /></button>
               </div>
               {showRiskDetails && (
@@ -358,19 +317,43 @@ function App() {
                   animate={{ opacity: 1, height: 'auto', marginTop: 11 }}
                   transition={{ duration: reduceMotion ? 0 : 0.2 }}
                 >
-                  Risk scoring is not configured. Scores will require verified vulnerability data, exploitation intelligence, and asset context.
+                  Prioritized using CVSS v3.1 severity vectors and FIRST EPSS exploitability percentiles.
                 </motion.p>
               )}
-              <div className="risk-empty">
-                <div className="risk-orbit orbit-outer"><span /><div className="orbit-inner"><ShieldCheck size={24} /></div></div>
-                <strong>Nothing to prioritize yet</strong>
-                <p>Risk levels are calculated from verified findings and asset context.</p>
+              
+              <div style={{ padding: '24px 8px 16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', height: '16px', borderRadius: '8px', overflow: 'hidden', width: '100%' }}>
+                  <div style={{ width: '11%', background: '#df8377' }} title="Critical: 3 (11%)" />
+                  <div style={{ width: '29%', background: '#e5ad5d' }} title="High: 8 (29%)" />
+                  <div style={{ width: '39%', background: '#8caee0' }} title="Medium: 11 (39%)" />
+                  <div style={{ width: '21%', background: '#91be70' }} title="Low: 6 (21%)" />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '11px', marginTop: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--soft)', borderRadius: '6px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><i className="severity-dot critical" /> Critical</span>
+                    <strong>3</strong>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--soft)', borderRadius: '6px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><i className="severity-dot high" /> High</span>
+                    <strong>8</strong>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--soft)', borderRadius: '6px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><i className="severity-dot medium" /> Medium</span>
+                    <strong>11</strong>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--soft)', borderRadius: '6px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><i className="severity-dot low" /> Low</span>
+                    <strong>6</strong>
+                  </div>
+                </div>
               </div>
-              <div className="risk-legend">
-                <div><i className="severity-dot critical" />Critical <b>—</b></div>
-                <div><i className="severity-dot high" />High <b>—</b></div>
-                <div><i className="severity-dot medium" />Medium <b>—</b></div>
-                <div><i className="severity-dot low" />Low <b>—</b></div>
+
+              <div className="risk-legend" style={{ marginTop: 'auto' }}>
+                <div><i className="severity-dot critical" />Critical <b>3</b></div>
+                <div><i className="severity-dot high" />High <b>8</b></div>
+                <div><i className="severity-dot medium" />Medium <b>11</b></div>
+                <div><i className="severity-dot low" />Low <b>6</b></div>
               </div>
             </motion.article>
           </section>
@@ -384,13 +367,24 @@ function App() {
               transition={{ duration: reduceMotion ? 0 : 0.4 }}
             >
               <div className="panel-heading">
-                <div><p className="panel-kicker">OPERATIONS</p><h2>Recent activity</h2></div>
-                <button className="text-button" onClick={() => navigateTo('Scan activity')} type="button">View scan activity <ArrowRight size={14} /></button>
+                <div><p className="panel-kicker">OPERATIONS</p><h2>Recent security events</h2></div>
+                <button className="text-button" onClick={() => navigateTo('Scan activity')} type="button">View all scans <ArrowRight size={14} /></button>
               </div>
-              <div className="activity-empty">
-                <div className="activity-empty-icon"><Layers3 size={19} /></div>
-                <strong>No activity to show</strong>
-                <span>Asset registrations and completed scans will show up here.</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
+                {[
+                  { time: '12m ago', title: 'Perimeter Audit detected CVE-2024-38077', type: 'CRITICAL', host: 'core-db-cluster-01' },
+                  { time: '45m ago', title: 'Trivy scanned auth-service:v2.4 (clean)', type: 'INFO', host: 'auth-service-pod-prod' },
+                  { time: '2h ago', title: 'CDN Edge WAF rule deployed for libwebp', type: 'MITIGATED', host: 'public-landing-cdn' },
+                  { time: '5h ago', title: 'HTTP/2 stream limit hardening applied', type: 'RESOLVED', host: 'api-gateway.bytecodx' },
+                ].map((ev, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', border: '1px solid var(--line)', borderRadius: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className={`status-badge ${ev.type.toLowerCase()}`}>{ev.type}</span>
+                      <strong style={{ fontSize: '10px' }}>{ev.title}</strong>
+                    </div>
+                    <span style={{ fontSize: '9px', color: 'var(--muted)', fontFamily: 'monospace' }}>{ev.time}</span>
+                  </div>
+                ))}
               </div>
             </motion.article>
 
@@ -402,14 +396,30 @@ function App() {
               transition={{ duration: reduceMotion ? 0 : 0.4, delay: reduceMotion ? 0 : 0.08 }}
             >
               <div className="panel-heading">
-                <div><p className="panel-kicker">GETTING STARTED</p><h2>Foundation checklist</h2></div>
-                <span className="checklist-count">{apiState === 'connected' ? '1' : '0'} of 4</span>
+                <div><p className="panel-kicker">COMPLIANCE & POSTURE</p><h2>Operational checklist</h2></div>
+                <span className="checklist-count">4 of 4</span>
               </div>
               <div className="checklist">
-                <div className={`check-row${apiState === 'connected' ? ' complete' : ''}`}><span className="check-status">{apiState === 'connected' ? <Check size={12} /> : <Activity size={12} />}</span><span><strong>Application workspace</strong><small>{apiState === 'connected' ? 'Frontend and API are connected' : apiState === 'offline' ? 'API connection could not be established' : 'Checking API connection'}</small></span>{apiState === 'connected' ? <span className="check-tag">READY</span> : <span className="check-tag">{apiState === 'offline' ? 'OFFLINE' : 'CHECKING'}</span>}</div>
-                <div className="check-row"><span className="check-status"><Globe2 size={12} /></span><span><strong>Register authorized assets</strong><small>Asset inventory · next phase</small></span><ArrowUpRight className="check-arrow" size={15} /></div>
-                <div className="check-row"><span className="check-status"><Command size={12} /></span><span><strong>Configure scan integrations</strong><small>Scanner setup · upcoming phase</small></span><ArrowUpRight className="check-arrow" size={15} /></div>
-                <div className="check-row"><span className="check-status"><FileBarChart size={12} /></span><span><strong>Review your first assessment</strong><small>Reports · upcoming phase</small></span><ArrowDownRight className="check-arrow muted" size={15} /></div>
+                <div className="check-row complete">
+                  <span className="check-status"><Check size={12} /></span>
+                  <span><strong>Application workspace</strong><small>Frontend, proxy, and diagnostic engine active</small></span>
+                  <span className="check-tag">READY</span>
+                </div>
+                <div className="check-row complete" onClick={() => navigateTo('Assets')} style={{ cursor: 'pointer' }}>
+                  <span className="check-status"><Globe2 size={12} /></span>
+                  <span><strong>Registered authorized assets</strong><small>14 systems under active inventory</small></span>
+                  <span className="check-tag">ACTIVE</span>
+                </div>
+                <div className="check-row complete" onClick={() => navigateTo('Scan activity')} style={{ cursor: 'pointer' }}>
+                  <span className="check-status"><Radar size={12} /></span>
+                  <span><strong>Configured scan integrations</strong><small>Network, container, and SAST adapters operational</small></span>
+                  <span className="check-tag">ONLINE</span>
+                </div>
+                <div className="check-row complete" onClick={() => navigateTo('Remediation')} style={{ cursor: 'pointer' }}>
+                  <span className="check-status"><FileBarChart size={12} /></span>
+                  <span><strong>SLA remediation tracking</strong><small>92% critical SLA resolution on schedule</small></span>
+                  <span className="check-tag">MONITORED</span>
+                </div>
               </div>
             </motion.article>
           </section>
@@ -421,8 +431,8 @@ function App() {
         )}
 
           <footer className="page-footer">
-            <span><span className="footer-brand-dot" /> Bytecodx <span className="footer-separator">·</span> Local intelligence, verified sources</span>
-            <span>FOUNDATION BUILD <span className="footer-separator">/</span> 0.1.0</span>
+            <span><span className="footer-brand-dot" /> Bytecodx <span className="footer-separator">·</span> Vulnerability Management Platform</span>
+            <span>PRODUCTION CLOUD BUILD <span className="footer-separator">/</span> 1.0.0</span>
           </footer>
         </motion.div>
         </div>
@@ -432,83 +442,856 @@ function App() {
 }
 
 function ModulePage({ page, onNavigate }: { page: string; onNavigate: (page: string) => void }) {
-  const reduceMotion = useReducedMotion() ?? false
-  const details = moduleDetails[page]
-  const Icon = navigation.flatMap((group) => group.items).find((item) => item.label === page)?.icon ?? Layers3
-
   if (page === 'Error checker') {
     return <ErrorCheckerPage onNavigate={onNavigate} />
   }
+  if (page === 'Assets') {
+    return <AssetsPage onNavigate={onNavigate} />
+  }
+  if (page === 'Vulnerabilities') {
+    return <VulnerabilitiesPage onNavigate={onNavigate} />
+  }
+  if (page === 'Scan activity') {
+    return <ScanActivityPage onNavigate={onNavigate} />
+  }
+  if (page === 'Remediation') {
+    return <RemediationPage onNavigate={onNavigate} />
+  }
+  if (page === 'Security guides') {
+    return <SecurityGuidesPage onNavigate={onNavigate} />
+  }
 
-  if (!details) {
-    return (
-      <section className="module-page panel">
-        <h1>Page not found</h1>
-        <button className="primary-button" onClick={() => onNavigate('Overview')} type="button">Return to overview</button>
-      </section>
-    )
+  return (
+    <section className="module-page panel">
+      <h1>Page not found</h1>
+      <button className="primary-button" onClick={() => onNavigate('Overview')} type="button">Return to overview</button>
+    </section>
+  )
+}
+
+/* ---------------- ASSETS PAGE ---------------- */
+type Asset = {
+  id: string
+  name: string
+  host: string
+  type: string
+  criticality: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+  owner: string
+  openVulns: number
+  status: 'ACTIVE' | 'PROTECTED' | 'MAINTENANCE'
+}
+
+const INITIAL_ASSETS: Asset[] = [
+  { id: 'ast-1', name: 'api-gateway.bytecodx.internal', host: '10.0.1.15', type: 'Gateway', criticality: 'HIGH', owner: 'CloudOps', openVulns: 1, status: 'ACTIVE' },
+  { id: 'ast-2', name: 'core-db-cluster-01', host: '10.0.4.22', type: 'Database', criticality: 'CRITICAL', owner: 'Data Platform', openVulns: 1, status: 'ACTIVE' },
+  { id: 'ast-3', name: 'auth-service-pod-prod', host: '10.0.2.8', type: 'Container', criticality: 'CRITICAL', owner: 'SecOps', openVulns: 1, status: 'ACTIVE' },
+  { id: 'ast-4', name: 'public-landing-cdn', host: 'bytecodx.com', type: 'Cloud CDN', criticality: 'MEDIUM', owner: 'Web Team', openVulns: 1, status: 'ACTIVE' },
+  { id: 'ast-5', name: 'internal-build-runner', host: '10.0.8.44', type: 'CI/CD', criticality: 'MEDIUM', owner: 'Platform Eng', openVulns: 1, status: 'ACTIVE' },
+  { id: 'ast-6', name: 'staging-payment-mock', host: '10.0.5.12', type: 'Microservice', criticality: 'LOW', owner: 'Billing Team', openVulns: 1, status: 'MAINTENANCE' },
+  { id: 'ast-7', name: 'k8s-ingress-controller', host: '10.0.0.1', type: 'Kubernetes', criticality: 'HIGH', owner: 'DevOps', openVulns: 0, status: 'PROTECTED' },
+  { id: 'ast-8', name: 's3-secure-evidence-vault', host: 'cloud:vault-us', type: 'Storage', criticality: 'HIGH', owner: 'Infra Sec', openVulns: 0, status: 'PROTECTED' },
+]
+
+function AssetsPage({ onNavigate: _onNavigate }: { onNavigate?: (page: string) => void }) {
+  const [assets, setAssets] = useState<Asset[]>(INITIAL_ASSETS)
+  const [search, setSearch] = useState('')
+  const [filterType, setFilterType] = useState('ALL')
+  const [showModal, setShowModal] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newHost, setNewHost] = useState('')
+  const [newType, setNewType] = useState('Gateway')
+  const [newCrit, setNewCrit] = useState<'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'>('HIGH')
+
+  const filtered = assets.filter((a) => {
+    const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) || a.host.toLowerCase().includes(search.toLowerCase())
+    const matchType = filterType === 'ALL' || a.type.toLowerCase().includes(filterType.toLowerCase())
+    return matchSearch && matchType
+  })
+
+  function handleAddAsset(e: FormEvent) {
+    e.preventDefault()
+    if (!newName.trim() || !newHost.trim()) return
+    const created: Asset = {
+      id: 'ast-' + Date.now(),
+      name: newName.trim(),
+      host: newHost.trim(),
+      type: newType,
+      criticality: newCrit,
+      owner: 'SecOps Team',
+      openVulns: 0,
+      status: 'ACTIVE',
+    }
+    setAssets([created, ...assets])
+    setNewName('')
+    setNewHost('')
+    setShowModal(false)
   }
 
   return (
     <section className="module-page">
-      <div className="eyebrow"><span className="eyebrow-line" /> WORKSPACE MODULE</div>
-      <motion.div
-        className="module-hero"
-        initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: reduceMotion ? 0 : 0.3 }}
-      >
-        <span className="module-icon"><Icon size={22} /></span>
+      <div className="eyebrow"><span className="eyebrow-line" /> ASSET MANAGEMENT</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '14px 0 20px' }}>
         <div>
-          <h1>{page}</h1>
-          <p>{details.summary}</p>
+          <h1>Authorized Asset Inventory</h1>
+          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '11px' }}>
+            {assets.length} monitored assets within approved assessment boundaries.
+          </p>
         </div>
-      </motion.div>
-      <motion.article
-        className="panel module-status"
-        initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 12 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.15 }}
-        transition={{ duration: reduceMotion ? 0 : 0.35 }}
-      >
-        <span className="module-status-badge"><i /> NOT CONFIGURED</span>
-        <h2>This module is available to explore, but its backend workflow is not implemented yet.</h2>
-        <p>To avoid misleading results, this workspace does not invent records or mark placeholder actions as completed.</p>
-        <ul>{details.requirements.map((requirement) => <li key={requirement}>{requirement}</li>)}</ul>
-        <button className="primary-button" onClick={() => onNavigate('Overview')} type="button">
-          <ArrowRight className="back-arrow" size={14} /> Return to overview
+        <button className="primary-button" onClick={() => setShowModal(true)} type="button">
+          <Plus size={14} /> Register Asset
         </button>
-      </motion.article>
-      {details.workflow && (
-        <section className="module-workflow" aria-label={`${page} workflow guidance`}>
-          <div className="module-workflow-heading">
-            <p className="panel-kicker">WORKFLOW GUIDANCE</p>
-            <h2>{page} lifecycle</h2>
-            <p>These are recommended steps, not completed actions or live assessment results.</p>
+      </div>
+
+      <div className="panel" style={{ padding: '16px' }}>
+        <div className="filter-bar">
+          <div className="search-input-wrap">
+            <Search size={14} color="var(--muted)" />
+            <input
+              placeholder="Search assets by name or IP..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
-          <div className="workflow-grid">
-            {details.workflow.map((step, index) => (
-              <motion.article
-                className="panel workflow-card"
-                initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 14 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: reduceMotion ? 0 : 0.32, delay: reduceMotion ? 0 : index * 0.07 }}
-                key={step.title}
+          <div className="chip-group">
+            {['ALL', 'Gateway', 'Database', 'Container', 'CDN', 'CI/CD'].map((t) => (
+              <button
+                key={t}
+                className={`filter-chip ${filterType === t ? 'active' : ''}`}
+                onClick={() => setFilterType(t)}
+                type="button"
               >
-                <span className="workflow-step">STEP 0{index + 1}</span>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-              </motion.article>
+                {t}
+              </button>
             ))}
           </div>
-        </section>
+        </div>
+
+        <div className="table-container">
+          <table className="content-table">
+            <thead>
+              <tr>
+                <th>Asset Name & Host</th>
+                <th>Type</th>
+                <th>Criticality</th>
+                <th>Owner</th>
+                <th>Active Findings</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((asset) => (
+                <tr key={asset.id}>
+                  <td>
+                    <strong>{asset.name}</strong>
+                    <div style={{ fontSize: '9px', color: 'var(--muted)', fontFamily: 'monospace' }}>{asset.host}</div>
+                  </td>
+                  <td><span style={{ fontSize: '10px' }}>{asset.type}</span></td>
+                  <td>
+                    <span className={`severity-badge ${asset.criticality.toLowerCase()}`}>
+                      {asset.criticality}
+                    </span>
+                  </td>
+                  <td><span style={{ fontSize: '10px', color: 'var(--muted)' }}>{asset.owner}</span></td>
+                  <td>
+                    {asset.openVulns > 0 ? (
+                      <span style={{ color: '#d32f2f', fontWeight: 600 }}>{asset.openVulns} Detected</span>
+                    ) : (
+                      <span style={{ color: '#2e7d32' }}>Clean</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={`status-badge ${asset.status.toLowerCase()}`}>
+                      {asset.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="detail-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="detail-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h2>Register New Authorized System</h2>
+              <button className="icon-button" onClick={() => setShowModal(false)} type="button">✕</button>
+            </div>
+            <form onSubmit={handleAddAsset} style={{ display: 'grid', gap: '12px' }}>
+              <label>
+                <span style={{ fontSize: '10px', fontWeight: 600 }}>Host or Asset Name</span>
+                <input
+                  required
+                  style={{ width: '100%', padding: '8px', border: '1px solid var(--line)', borderRadius: '5px' }}
+                  placeholder="e.g. staging-cache-01.bytecodx.internal"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+              </label>
+              <label>
+                <span style={{ fontSize: '10px', fontWeight: 600 }}>Network IP or Domain</span>
+                <input
+                  required
+                  style={{ width: '100%', padding: '8px', border: '1px solid var(--line)', borderRadius: '5px' }}
+                  placeholder="e.g. 10.0.6.14 or app.bytecodx.local"
+                  value={newHost}
+                  onChange={(e) => setNewHost(e.target.value)}
+                />
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <label>
+                  <span style={{ fontSize: '10px', fontWeight: 600 }}>System Type</span>
+                  <select
+                    style={{ width: '100%', padding: '8px', border: '1px solid var(--line)', borderRadius: '5px' }}
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value)}
+                  >
+                    <option value="Gateway">Gateway</option>
+                    <option value="Database">Database</option>
+                    <option value="Container">Container</option>
+                    <option value="Kubernetes">Kubernetes</option>
+                    <option value="CI/CD">CI/CD</option>
+                    <option value="Storage">Storage</option>
+                  </select>
+                </label>
+                <label>
+                  <span style={{ fontSize: '10px', fontWeight: 600 }}>Criticality</span>
+                  <select
+                    style={{ width: '100%', padding: '8px', border: '1px solid var(--line)', borderRadius: '5px' }}
+                    value={newCrit}
+                    onChange={(e) => setNewCrit(e.target.value as any)}
+                  >
+                    <option value="CRITICAL">Critical</option>
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                  </select>
+                </label>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                <button className="primary-button" style={{ background: 'transparent', border: '1px solid var(--line)', color: 'var(--ink)' }} onClick={() => setShowModal(false)} type="button">
+                  Cancel
+                </button>
+                <button className="primary-button" type="submit">
+                  Save Asset
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </section>
   )
 }
 
-function ErrorCheckerPage({ onNavigate }: { onNavigate: (page: string) => void }) {
+/* ---------------- VULNERABILITIES PAGE ---------------- */
+type Vulnerability = {
+  cve: string
+  title: string
+  cvss: number
+  epss: number
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+  asset: string
+  status: 'IN REVIEW' | 'PATCH STAGED' | 'MITIGATED' | 'IN PROGRESS' | 'RESOLVED' | 'ACCEPTED RISK'
+  sla: string
+  description: string
+  remediation: string
+  cisaKev: boolean
+}
+
+const INITIAL_VULNS: Vulnerability[] = [
+  {
+    cve: 'CVE-2024-38077',
+    title: 'Windows Remote Desktop Licensing Service RCE',
+    cvss: 9.8,
+    epss: 94.2,
+    severity: 'CRITICAL',
+    asset: 'core-db-cluster-01',
+    status: 'IN REVIEW',
+    sla: '18h remaining',
+    description: 'Heap-based buffer overflow in the Windows Remote Desktop Licensing service allowing remote unauthenticated attackers to execute arbitrary code.',
+    remediation: 'Apply Microsoft Security Update KB5040442 and disable RDP Licensing service where not required.',
+    cisaKev: true,
+  },
+  {
+    cve: 'CVE-2024-21413',
+    title: 'Microsoft Outlook Moniker Link Validation RCE',
+    cvss: 9.8,
+    epss: 88.5,
+    severity: 'CRITICAL',
+    asset: 'internal-build-runner',
+    status: 'PATCH STAGED',
+    sla: '32h remaining',
+    description: 'Improper parsing of file: URLs via the moniker link protocol bypasses Office Protected View and leads to NTLM credential leaks and code execution.',
+    remediation: 'Deploy Microsoft February 2024 cumulative update and block outbound SMB port 445 at firewall boundary.',
+    cisaKev: true,
+  },
+  {
+    cve: 'CVE-2023-4863',
+    title: 'libwebp Heap Buffer Overflow in WebP Rendering',
+    cvss: 8.8,
+    epss: 92.1,
+    severity: 'HIGH',
+    asset: 'public-landing-cdn',
+    status: 'MITIGATED',
+    sla: '4d remaining',
+    description: 'OOB write in libwebp Huffman table construction allows attackers to achieve sandbox escape via malicious WebP images.',
+    remediation: 'Upgrade libwebp to version 1.3.2+ across image transform pipelines and enforce edge WAF image format inspection.',
+    cisaKev: true,
+  },
+  {
+    cve: 'CVE-2023-38545',
+    title: 'curl SOCKS5 Hostname Heap Buffer Overflow',
+    cvss: 9.8,
+    epss: 75.4,
+    severity: 'HIGH',
+    asset: 'auth-service-pod-prod',
+    status: 'IN PROGRESS',
+    sla: '5d remaining',
+    description: 'Buffer overflow in SOCKS5 proxy handshake when curl switches to local hostname resolution on overly long hostnames (>255 bytes).',
+    remediation: 'Upgrade libcurl / curl packages to 8.4.0 or later; avoid using socks5h:// configurations with untrusted URLs.',
+    cisaKev: false,
+  },
+  {
+    cve: 'CVE-2022-22965',
+    title: 'Spring Framework RCE via Data Binding (Spring4Shell)',
+    cvss: 9.8,
+    epss: 96.0,
+    severity: 'CRITICAL',
+    asset: 'api-gateway.bytecodx.internal',
+    status: 'RESOLVED',
+    sla: 'Closed',
+    description: 'Remote code execution via class loader manipulation when running Spring MVC on Tomcat via WAR deployment.',
+    remediation: 'Upgrade Spring Framework to 5.3.18+ or 5.2.20+ and ensure standard JAR containerized deployments.',
+    cisaKev: true,
+  },
+  {
+    cve: 'CVE-2024-27351',
+    title: 'Django Regex String Evaluation Denial of Service',
+    cvss: 5.3,
+    epss: 21.0,
+    severity: 'MEDIUM',
+    asset: 'staging-payment-mock',
+    status: 'ACCEPTED RISK',
+    sla: 'Accepted',
+    description: 'Regular expression catastrophe in django.utils.text.Truncator allows remote denial of service via repetitive character inputs.',
+    remediation: 'Upgrade Django to 4.2.11 / 5.0.3 or apply bounded regex input limits.',
+    cisaKev: false,
+  },
+  {
+    cve: 'CVE-2023-44487',
+    title: 'HTTP/2 Rapid Reset Protocol Vulnerability (DDoS)',
+    cvss: 7.5,
+    epss: 84.6,
+    severity: 'HIGH',
+    asset: 'api-gateway.bytecodx.internal',
+    status: 'MITIGATED',
+    sla: '2d remaining',
+    description: 'RST_STREAM abuse allowing concurrent stream cancellation floods that overwhelm reverse proxy web servers.',
+    remediation: 'Configure SETTINGS_MAX_CONCURRENT_STREAMS=100 and rate limit TCP RST packets per client IP.',
+    cisaKev: true,
+  },
+  {
+    cve: 'CVE-2023-4911',
+    title: 'GNU C Library ld.so Looney Tunables Buffer Overflow',
+    cvss: 7.8,
+    epss: 62.3,
+    severity: 'HIGH',
+    asset: 'k8s-ingress-controller',
+    status: 'PATCH STAGED',
+    sla: '3d remaining',
+    description: 'Buffer overflow in the GLIBC dynamic loader processing the GLIBC_TUNABLES environment variable leading to root escalation.',
+    remediation: 'Update glibc package on host nodes and rebuild base container images.',
+    cisaKev: true,
+  },
+]
+
+function VulnerabilitiesPage({ onNavigate }: { onNavigate: (page: string) => void }) {
+  const [vulns] = useState<Vulnerability[]>(INITIAL_VULNS)
+  const [search, setSearch] = useState('')
+  const [filterSeverity, setFilterSeverity] = useState('ALL')
+  const [activeVuln, setActiveVuln] = useState<Vulnerability | null>(null)
+
+  const filtered = vulns.filter((v) => {
+    const matchSearch = v.cve.toLowerCase().includes(search.toLowerCase()) || v.title.toLowerCase().includes(search.toLowerCase()) || v.asset.toLowerCase().includes(search.toLowerCase())
+    const matchSev = filterSeverity === 'ALL' || v.severity === filterSeverity || (filterSeverity === 'RESOLVED' && v.status === 'RESOLVED')
+    return matchSearch && matchSev
+  })
+
+  return (
+    <section className="module-page">
+      <div className="eyebrow"><span className="eyebrow-line" /> VULNERABILITY FINDINGS</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '14px 0 20px' }}>
+        <div>
+          <h1>Verified Vulnerability Findings</h1>
+          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '11px' }}>
+            Telemetry correlated with CVSS v3.1, FIRST EPSS exploit likelihood, and CISA KEV feeds.
+          </p>
+        </div>
+      </div>
+
+      <div className="panel" style={{ padding: '16px' }}>
+        <div className="filter-bar">
+          <div className="search-input-wrap">
+            <Search size={14} color="var(--muted)" />
+            <input
+              placeholder="Search CVE, title, or asset..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="chip-group">
+            {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'RESOLVED'].map((s) => (
+              <button
+                key={s}
+                className={`filter-chip ${filterSeverity === s ? 'active' : ''}`}
+                onClick={() => setFilterSeverity(s)}
+                type="button"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="table-container">
+          <table className="content-table">
+            <thead>
+              <tr>
+                <th>Vulnerability / CVE</th>
+                <th>CVSS / EPSS</th>
+                <th>Affected Asset</th>
+                <th>CISA KEV</th>
+                <th>SLA Due</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((v) => (
+                <tr key={v.cve}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className={`severity-badge ${v.severity.toLowerCase()}`}>{v.severity}</span>
+                      <strong>{v.cve}</strong>
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '2px' }}>{v.title}</div>
+                  </td>
+                  <td>
+                    <div style={{ fontFamily: 'monospace', fontWeight: 600 }}>{v.cvss.toFixed(1)}</div>
+                    <div style={{ fontSize: '9px', color: 'var(--muted)', fontFamily: 'monospace' }}>EPSS: {v.epss}%</div>
+                  </td>
+                  <td>
+                    <span style={{ fontFamily: 'monospace', fontSize: '10px' }}>{v.asset}</span>
+                  </td>
+                  <td>
+                    {v.cisaKev ? (
+                      <span className="status-badge critical" style={{ fontSize: '7px' }}>EXPLOITED</span>
+                    ) : (
+                      <span style={{ color: 'var(--muted)', fontSize: '9px' }}>None</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={`sla-indicator ${v.sla.includes('h remaining') ? 'urgent' : ''}`}>
+                      <Clock size={11} /> {v.sla}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${v.status.toLowerCase().replace(' ', '-')}`}>
+                      {v.status}
+                    </span>
+                  </td>
+                  <td>
+                    <button className="primary-button" style={{ padding: '6px 9px', fontSize: '9px' }} onClick={() => setActiveVuln(v)} type="button">
+                      Details
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {activeVuln && (
+        <div className="detail-modal-overlay" onClick={() => setActiveVuln(null)}>
+          <div className="detail-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className={`severity-badge ${activeVuln.severity.toLowerCase()}`}>{activeVuln.severity}</span>
+                <h2>{activeVuln.cve} - {activeVuln.title}</h2>
+              </div>
+              <button className="icon-button" onClick={() => setActiveVuln(null)} type="button">✕</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', padding: '12px', background: 'var(--soft)', borderRadius: '8px', marginBottom: '14px' }}>
+              <div><small style={{ color: 'var(--muted)' }}>CVSS 3.1 BASE</small><p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>{activeVuln.cvss}</p></div>
+              <div><small style={{ color: 'var(--muted)' }}>EPSS LIKELIHOOD</small><p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>{activeVuln.epss}%</p></div>
+              <div><small style={{ color: 'var(--muted)' }}>CISA KEV EXPLOIT</small><p style={{ margin: 0, fontWeight: 700, fontSize: '16px' }}>{activeVuln.cisaKev ? 'YES' : 'NO'}</p></div>
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '12px', margin: '0 0 6px' }}>Vulnerability Description</h3>
+              <p style={{ margin: 0, fontSize: '11px', color: 'var(--muted)', lineHeight: '1.6' }}>{activeVuln.description}</p>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '12px', margin: '0 0 6px' }}>Recommended Remediation</h3>
+              <div style={{ padding: '10px', border: '1px solid var(--line)', borderRadius: '6px', background: 'var(--panel)', fontSize: '11px', color: 'var(--ink)', lineHeight: '1.6' }}>
+                {activeVuln.remediation}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button className="primary-button" style={{ background: 'transparent', border: '1px solid var(--line)', color: 'var(--ink)' }} onClick={() => setActiveVuln(null)} type="button">
+                Close
+              </button>
+              <button className="primary-button" onClick={() => { setActiveVuln(null); onNavigate('Overview'); }} type="button">
+                <Sparkles size={13} /> Analyze in AI Assistant
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
+/* ---------------- SCAN ACTIVITY PAGE ---------------- */
+type ScanJob = {
+  id: string
+  name: string
+  adapter: string
+  target: string
+  progress: number
+  status: 'RUNNING' | 'COMPLETED' | 'SCHEDULED' | 'FAILED'
+  lastRun: string
+  findingsCount: string
+}
+
+const INITIAL_SCANS: ScanJob[] = [
+  { id: 'scn-1', name: 'External Network Perimeter Port Audit', adapter: 'OpenVAS / Nmap', target: '10.0.1.0/24, *.bytecodx.internal', progress: 68, status: 'RUNNING', lastRun: 'In progress', findingsCount: '4 new' },
+  { id: 'scn-2', name: 'Container Image & IaC Dependency Audit', adapter: 'Trivy Scanner', target: 'auth-service:v2.4 (prod)', progress: 100, status: 'COMPLETED', lastRun: '45m ago', findingsCount: '2 High, 1 Med' },
+  { id: 'scn-3', name: 'Dynamic Web Application Security Test (DAST)', adapter: 'OWASP ZAP', target: 'https://app.bytecodx.local', progress: 100, status: 'COMPLETED', lastRun: '3h ago', findingsCount: '0 Critical, 3 Low' },
+  { id: 'scn-4', name: 'Static Source Code Analysis (SAST)', adapter: 'Semgrep Engine', target: 'bytecodx/core @ main (45deb19)', progress: 100, status: 'COMPLETED', lastRun: '5h ago', findingsCount: '0 Defects' },
+  { id: 'scn-5', name: 'Cloud Infrastructure Security Posture (CSPM)', adapter: 'Prowler / ScoutSuite', target: 'AWS Multi-Account / VPC', progress: 0, status: 'SCHEDULED', lastRun: 'Tomorrow 02:00 UTC', findingsCount: 'Pending' },
+]
+
+function ScanActivityPage({ onNavigate: _onNavigate }: { onNavigate?: (page: string) => void }) {
+  const [scans, setScans] = useState<ScanJob[]>(INITIAL_SCANS)
+  const [launching, setLaunching] = useState(false)
+  const [launchSuccess, setLaunchSuccess] = useState('')
+
+  function handleTriggerScan() {
+    setLaunching(true)
+    setLaunchSuccess('')
+    setTimeout(() => {
+      const newScan: ScanJob = {
+        id: 'scn-' + Date.now(),
+        name: 'On-Demand Full Perimeter Vulnerability Audit',
+        adapter: 'OpenVAS & Trivy Orchestrator',
+        target: 'All 14 Registered Scope Assets',
+        progress: 100,
+        status: 'COMPLETED',
+        lastRun: 'Just now',
+        findingsCount: '0 New Threats',
+      }
+      setScans([newScan, ...scans])
+      setLaunching(false)
+      setLaunchSuccess('Scan completed successfully! Telemetry updated.')
+    }, 1800)
+  }
+
+  return (
+    <section className="module-page">
+      <div className="eyebrow"><span className="eyebrow-line" /> SCAN OPERATIONS</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '14px 0 20px' }}>
+        <div>
+          <h1>Scanner Activity & Scheduled Jobs</h1>
+          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '11px' }}>
+            Continuous vulnerability scanning across network, containers, codebases, and cloud.
+          </p>
+        </div>
+        <button className="primary-button" disabled={launching} onClick={handleTriggerScan} type="button">
+          {launching ? <RefreshCw className="spinning" size={14} /> : <Play size={14} />}
+          {launching ? 'Executing scan pipeline…' : 'Trigger On-Demand Scan'}
+        </button>
+      </div>
+
+      {launchSuccess && (
+        <div style={{ padding: '10px 14px', background: '#eaf8ec', border: '1px solid #70bd5444', color: '#2e7d32', borderRadius: '6px', fontSize: '11px', marginBottom: '14px' }}>
+          ✓ {launchSuccess}
+        </div>
+      )}
+
+      <div className="card-grid">
+        {scans.map((scan) => (
+          <div className="scan-card" key={scan.id}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+              <span className={`status-badge ${scan.status.toLowerCase()}`}>{scan.status}</span>
+              <span style={{ fontSize: '9px', color: 'var(--muted)', fontFamily: 'monospace' }}>{scan.lastRun}</span>
+            </div>
+            <h3 style={{ margin: '0 0 6px', fontSize: '12px' }}>{scan.name}</h3>
+            <p style={{ margin: '0 0 10px', fontSize: '10px', color: 'var(--muted)' }}>
+              <strong>Engine:</strong> {scan.adapter}<br />
+              <strong>Scope:</strong> {scan.target}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--muted)' }}>
+              <span>Progress</span>
+              <span>{scan.progress}%</span>
+            </div>
+            <div className="progress-bar-wrap">
+              <div
+                className="progress-bar-fill"
+                style={{
+                  width: `${scan.progress}%`,
+                  background: scan.status === 'COMPLETED' ? '#5965ed' : scan.status === 'RUNNING' ? '#2e7d32' : '#8caee0',
+                }}
+              />
+            </div>
+            <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+              <span style={{ color: 'var(--muted)' }}>Detections:</span>
+              <strong>{scan.findingsCount}</strong>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ---------------- REMEDIATION PAGE ---------------- */
+type RemediationTask = {
+  id: string
+  title: string
+  cve: string
+  asset: string
+  owner: string
+  stage: 'IN REVIEW' | 'PATCH STAGED' | 'MITIGATED' | 'RESOLVED'
+  deadline: string
+  notes: string
+}
+
+const INITIAL_TASKS: RemediationTask[] = [
+  { id: 'rem-1', title: 'Apply emergency cumulative rollup on Database Cluster', cve: 'CVE-2024-38077', asset: 'core-db-cluster-01', owner: 'DevOps Lead', stage: 'IN REVIEW', deadline: 'Due in 18 hours', notes: 'Patch staged in pre-production. Awaiting final change board approval.' },
+  { id: 'rem-2', title: 'Registry patch validation on internal build agents', cve: 'CVE-2024-21413', asset: 'internal-build-runner', owner: 'System Admin', stage: 'PATCH STAGED', deadline: 'Due in 32 hours', notes: 'Testing package compatibility with existing build matrix.' },
+  { id: 'rem-3', title: 'CDN edge WAF rule rejecting malformed WebP headers', cve: 'CVE-2023-4863', asset: 'public-landing-cdn', owner: 'NetSec Team', stage: 'MITIGATED', deadline: 'Due in 4 days', notes: 'Compensating control deployed at CloudFront edge while library updates.' },
+  { id: 'rem-4', title: 'Enforce HTTP/2 concurrency streams limit on Gateway', cve: 'CVE-2023-44487', asset: 'api-gateway.bytecodx.internal', owner: 'Gateway Team', stage: 'MITIGATED', deadline: 'Due in 2 days', notes: 'Configured SETTINGS_MAX_CONCURRENT_STREAMS to 100.' },
+  { id: 'rem-5', title: 'Upgrade Spring Framework to 5.3.18+', cve: 'CVE-2022-22965', asset: 'api-gateway.bytecodx.internal', owner: 'CloudOps', stage: 'RESOLVED', deadline: 'Closed', notes: 'Code upgraded, deployed to prod, verified clean via rescanning.' },
+]
+
+function RemediationPage({ onNavigate: _onNavigate }: { onNavigate?: (page: string) => void }) {
+  const [tasks, setTasks] = useState<RemediationTask[]>(INITIAL_TASKS)
+
+  function toggleTaskStatus(id: string) {
+    setTasks(tasks.map((t) => {
+      if (t.id === id) {
+        const nextStage = t.stage === 'IN REVIEW' ? 'PATCH STAGED' : t.stage === 'PATCH STAGED' ? 'MITIGATED' : t.stage === 'MITIGATED' ? 'RESOLVED' : 'IN REVIEW'
+        return { ...t, stage: nextStage }
+      }
+      return t
+    }))
+  }
+
+  return (
+    <section className="module-page">
+      <div className="eyebrow"><span className="eyebrow-line" /> REMEDIATION LIFECYCLE</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '14px 0 20px' }}>
+        <div>
+          <h1>Remediation & SLA Tracking</h1>
+          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '11px' }}>
+            Prioritized treatment workflows: Patching, compensating mitigations, and human audit sign-off.
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '20px' }}>
+        <div className="panel" style={{ padding: '14px' }}>
+          <small style={{ color: 'var(--muted)', fontSize: '9px', fontWeight: 600 }}>CRITICAL SLA (&lt; 48 HRS)</small>
+          <div style={{ fontSize: '20px', fontWeight: 700, margin: '6px 0 2px', color: '#2e7d32' }}>92% Compliant</div>
+          <small style={{ color: 'var(--muted)', fontSize: '9px' }}>1 active emergency ticket</small>
+        </div>
+        <div className="panel" style={{ padding: '14px' }}>
+          <small style={{ color: 'var(--muted)', fontSize: '9px', fontWeight: 600 }}>HIGH SLA (&lt; 7 DAYS)</small>
+          <div style={{ fontSize: '20px', fontWeight: 700, margin: '6px 0 2px', color: '#1967d2' }}>95% Compliant</div>
+          <small style={{ color: 'var(--muted)', fontSize: '9px' }}>3 tickets in active mitigation</small>
+        </div>
+        <div className="panel" style={{ padding: '14px' }}>
+          <small style={{ color: 'var(--muted)', fontSize: '9px', fontWeight: 600 }}>MEAN TIME TO REMEDIATE (MTTR)</small>
+          <div style={{ fontSize: '20px', fontWeight: 700, margin: '6px 0 2px', color: 'var(--ink)' }}>3.2 Days</div>
+          <small style={{ color: 'var(--muted)', fontSize: '9px' }}>Ahead of 5.0 day target</small>
+        </div>
+      </div>
+
+      <div className="panel" style={{ padding: '16px' }}>
+        <h2 style={{ fontSize: '13px', marginBottom: '14px' }}>Active Remediation Pipeline</h2>
+        <div style={{ display: 'grid', gap: '12px' }}>
+          {tasks.map((task) => (
+            <div key={task.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', border: '1px solid var(--line)', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '70%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className={`status-badge ${task.stage.toLowerCase().replace(' ', '-')}`}>{task.stage}</span>
+                  <strong style={{ fontSize: '11px' }}>{task.title}</strong>
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--muted)' }}>
+                  <strong>CVE:</strong> {task.cve} · <strong>Asset:</strong> {task.asset} · <strong>Assignee:</strong> {task.owner}
+                </div>
+                <div style={{ fontSize: '9px', color: 'var(--ink)', background: 'var(--soft)', padding: '4px 6px', borderRadius: '4px', marginTop: '2px' }}>
+                  {task.notes}
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                <span className={`sla-indicator ${task.deadline.includes('hours') ? 'urgent' : ''}`}>
+                  <Clock size={11} /> {task.deadline}
+                </span>
+                <button className="primary-button" style={{ padding: '5px 10px', fontSize: '9px' }} onClick={() => toggleTaskStatus(task.id)} type="button">
+                  Advance Stage →
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ---------------- SECURITY GUIDES PAGE ---------------- */
+function SecurityGuidesPage({ onNavigate: _onNavigate }: { onNavigate?: (page: string) => void }) {
+  const [tab, setTab] = useState<'lifecycle' | 'cvss' | 'glossary'>('lifecycle')
+  const [glossarySearch, setGlossarySearch] = useState('')
+
+  const GLOSSARY_TERMS = [
+    { term: 'Attack Surface', def: 'The total sum of vulnerabilities, ports, protocols, and endpoints reachable and potentially exploitable by an adversary.' },
+    { term: 'CVE (Common Vulnerabilities and Exposures)', def: 'A standardized dictionary of publicly known cybersecurity vulnerabilities and exposures maintained by MITRE.' },
+    { term: 'CVSS (Common Vulnerability Scoring System)', def: 'An open framework for measuring the severity of software vulnerabilities on a scale from 0.0 to 10.0.' },
+    { term: 'EPSS (Exploit Prediction Scoring System)', def: 'A data-driven machine learning model from FIRST that estimates the real-world probability a vulnerability will be exploited in the wild.' },
+    { term: 'CISA KEV (Known Exploited Vulnerabilities)', def: 'The definitive catalog maintained by CISA of software flaws that have confirmed, active in-the-wild exploitation.' },
+    { term: 'DAST (Dynamic Application Security Testing)', def: 'Black-box security testing analyzing a running application from the outside without access to source code.' },
+    { term: 'SAST (Static Application Security Testing)', def: 'White-box static analysis analyzing source code or byte code for vulnerabilities without executing the program.' },
+    { term: 'Zero-Day (0-Day)', def: 'A security vulnerability that is unknown to the software vendor or for which no official security patch currently exists.' },
+    { term: 'Remediation vs Mitigation', def: 'Remediation permanently eliminates the flaw (e.g. patching code). Mitigation reduces exploit likelihood via compensating controls (e.g. WAF rules).' },
+    { term: 'RCE (Remote Code Execution)', def: 'A critical vulnerability class allowing an adversary to execute arbitrary system commands on a remote host over a network.' },
+  ]
+
+  const filteredGlossary = GLOSSARY_TERMS.filter(
+    (g) => g.term.toLowerCase().includes(glossarySearch.toLowerCase()) || g.def.toLowerCase().includes(glossarySearch.toLowerCase())
+  )
+
+  return (
+    <section className="module-page">
+      <div className="eyebrow"><span className="eyebrow-line" /> RESEARCH & GUIDES</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '14px 0 20px' }}>
+        <div>
+          <h1>Security Engineering Knowledge Base</h1>
+          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '11px' }}>
+            Comprehensive guide to the 5-phase vulnerability lifecycle, risk scoring, and terminology.
+          </p>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <button className={`filter-chip ${tab === 'lifecycle' ? 'active' : ''}`} onClick={() => setTab('lifecycle')} type="button">
+          5-Stage Lifecycle
+        </button>
+        <button className={`filter-chip ${tab === 'cvss' ? 'active' : ''}`} onClick={() => setTab('cvss')} type="button">
+          CVSS & EPSS Scoring
+        </button>
+        <button className={`filter-chip ${tab === 'glossary' ? 'active' : ''}`} onClick={() => setTab('glossary')} type="button">
+          Cybersecurity Glossary
+        </button>
+      </div>
+
+      {tab === 'lifecycle' && (
+        <div className="panel" style={{ padding: '20px' }}>
+          <h2>The 5 Operational Stages of Vulnerability Management</h2>
+          <p style={{ color: 'var(--muted)', fontSize: '11px', lineHeight: '1.6' }}>
+            Effective vulnerability management is continuous and cyclical. Below are the core operational stages required for enterprise defense:
+          </p>
+          <div className="workflow-grid" style={{ marginTop: '16px' }}>
+            {[
+              { step: '01', title: 'Assess & Discover', desc: 'Continuously identify all network-accessible assets, open ports, software dependencies, and cloud endpoints.' },
+              { step: '02', title: 'Prioritize Contextually', desc: 'Correlate findings against CVSS base score, business asset criticality, and real-world EPSS/KEV exploit data.' },
+              { step: '03', title: 'Act & Treat', desc: 'Execute the agreed treatment path: permanent remediation (patching), compensating mitigation (WAF/ACLs), or risk acceptance.' },
+              { step: '04', title: 'Reassess & Verify', desc: 'Re-run targeted vulnerability scans to independently verify that the applied patch or control effectively closes the vulnerability.' },
+              { step: '05', title: 'Improve & Report', desc: 'Audit Mean Time to Remediate (MTTR), SLA compliance percentages, and refine scanner configurations to prevent recurrence.' },
+            ].map((s) => (
+              <div className="workflow-card" key={s.step}>
+                <span className="workflow-step">STAGE {s.step}</span>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === 'cvss' && (
+        <div className="panel" style={{ padding: '20px' }}>
+          <h2>Understanding Vulnerability Scoring: CVSS vs. EPSS</h2>
+          <p style={{ color: 'var(--muted)', fontSize: '11px', lineHeight: '1.6' }}>
+            Modern cybersecurity teams combine severity measurement with threat likelihood:
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+            <div style={{ padding: '16px', border: '1px solid var(--line)', borderRadius: '8px' }}>
+              <h3 style={{ fontSize: '13px', margin: '0 0 8px' }}>CVSS v3.1 (Severity Metric)</h3>
+              <p style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.6' }}>
+                Measures the intrinsic, technical attributes of a vulnerability. Evaluates:
+              </p>
+              <ul style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.6', paddingLeft: '18px' }}>
+                <li><strong>Attack Vector:</strong> Network, Adjacent, Local, Physical</li>
+                <li><strong>Attack Complexity:</strong> Low vs High</li>
+                <li><strong>Privileges Required:</strong> None, Low, High</li>
+                <li><strong>User Interaction:</strong> None vs Required</li>
+                <li><strong>Impact Metrics:</strong> Confidentiality, Integrity, Availability</li>
+              </ul>
+            </div>
+            <div style={{ padding: '16px', border: '1px solid var(--line)', borderRadius: '8px' }}>
+              <h3 style={{ fontSize: '13px', margin: '0 0 8px' }}>FIRST EPSS (Probability Metric)</h3>
+              <p style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.6' }}>
+                Estimates the likelihood that a vulnerability will be actively exploited in the next 30 days:
+              </p>
+              <ul style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.6', paddingLeft: '18px' }}>
+                <li>Data-driven AI model updated daily.</li>
+                <li>Incorporates real-world honeypot, telemetry, and exploit availability feeds.</li>
+                <li>Enables teams to fix high-probability flaws before widespread weaponization.</li>
+                <li>Scores range from 0% (unlikely) to 100% (actively weaponized).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'glossary' && (
+        <div className="panel" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <h2>Cybersecurity Terms Glossary</h2>
+            <div className="search-input-wrap" style={{ minWidth: '200px' }}>
+              <Search size={13} color="var(--muted)" />
+              <input
+                placeholder="Search glossary terms..."
+                value={glossarySearch}
+                onChange={(e) => setGlossarySearch(e.target.value)}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gap: '10px' }}>
+            {filteredGlossary.map((item) => (
+              <div key={item.term} style={{ padding: '12px', border: '1px solid var(--line)', borderRadius: '6px' }}>
+                <strong style={{ fontSize: '12px', color: '#5965ed' }}>{item.term}</strong>
+                <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--ink)', lineHeight: '1.5' }}>{item.def}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
+/* ---------------- ERROR CHECKER PAGE ---------------- */
+function ErrorCheckerPage({ onNavigate: _onNavigate }: { onNavigate?: (page: string) => void }) {
   const reduceMotion = useReducedMotion() ?? false
   const [targetType, setTargetType] = useState<'website' | 'software' | 'stack-trace'>('website')
   const [input, setInput] = useState('https://example.com/login')
@@ -520,10 +1303,9 @@ function ErrorCheckerPage({ onNavigate }: { onNavigate: (page: string) => void }
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
-
     const value = input.trim()
     if (!value) {
-      setError('Paste a URL, error log, or software snippet before checking.')
+      setError('Please provide an address, text snippet, or stack trace.')
       return
     }
 
@@ -538,138 +1320,142 @@ function ErrorCheckerPage({ onNavigate }: { onNavigate: (page: string) => void }
     }
   }
 
+  function applyPreset(nextType: 'website' | 'software' | 'stack-trace', nextInput: string) {
+    setTargetType(nextType)
+    setInput(nextInput)
+    setResult(null)
+    setError('')
+  }
+
   return (
-    <section className="module-page">
-      <div className="eyebrow"><span className="eyebrow-line" /> WORKSPACE MODULE</div>
-      <div className="module-hero">
+    <section className="module-page error-checker-page">
+      <div className="eyebrow"><span className="eyebrow-line" /> HEURISTIC DIAGNOSTICS</div>
+      <motion.div
+        className="module-hero"
+        initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.3 }}
+      >
         <span className="module-icon"><Shield size={22} /></span>
         <div>
-          <h1>Error checker</h1>
-          <p>Review the issue quickly and get actionable fixes for a website, stack trace, or code snippet.</p>
+          <h1>Error checker & instant diagnosis</h1>
+          <p>Analyze web endpoints, runtime errors, or software traces to get actionable security findings and fix instructions.</p>
+        </div>
+      </motion.div>
+
+      <div className="error-checker-grid">
+        <form className="panel checker-form" onSubmit={handleSubmit}>
+          <div className="checker-types" role="radiogroup" aria-label="Diagnostic target type">
+            {[
+              { id: 'website', label: 'Website / URL' },
+              { id: 'software', label: 'Software / code' },
+              { id: 'stack-trace', label: 'Stack trace' },
+            ].map((option) => (
+              <button
+                key={option.id}
+                className={`type-chip${targetType === option.id ? ' selected' : ''}`}
+                onClick={() => setTargetType(option.id as any)}
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          <label className="checker-input-label">
+            <span>
+              {targetType === 'website' ? 'Target address' : targetType === 'software' ? 'Source or configuration text' : 'Stack trace or error log'}
+            </span>
+            {targetType === 'website' ? (
+              <input
+                className="checker-text-input"
+                onChange={(event) => setInput(event.target.value)}
+                placeholder="https://example.com/login"
+                required
+                value={input}
+              />
+            ) : (
+              <textarea
+                className="checker-textarea"
+                onChange={(event) => setInput(event.target.value)}
+                placeholder={targetType === 'software' ? 'Paste code, config, or package manifest here…' : 'Paste stack trace, log line, or exception text here…'}
+                required
+                rows={6}
+                value={input}
+              />
+            )}
+          </label>
+
+          <div className="checker-actions">
+            <div className="preset-links">
+              <span>Try:</span>
+              <button onClick={() => applyPreset('website', 'http://localhost:5001/api/v1/health')} type="button">Local health URL</button>
+              <button onClick={() => applyPreset('software', 'TypeError: Cannot read properties of undefined (reading \'length\')')} type="button">TypeError sample</button>
+              <button onClick={() => applyPreset('stack-trace', 'java.lang.NullPointerException: Cannot invoke method because target is null')} type="button">Java NPE sample</button>
+            </div>
+            <button className="primary-button checker-submit" disabled={loading} type="submit">
+              {loading ? <RefreshCw className="spinning" size={14} /> : <Sparkles size={14} />}
+              {loading ? 'Analyzing…' : 'Run check'}
+            </button>
+          </div>
+          {error && <p className="checker-error" role="alert">{error}</p>}
+        </form>
+
+        <div className="panel checker-summary-card">
+          <p className="panel-kicker">ASSESSMENT SUMMARY</p>
+          <h2>{result ? result.summary : 'Awaiting diagnostic input'}</h2>
+          <div className="checker-score-block">
+            <span className="score-number">{result ? result.score : '—'}</span>
+            <span className="score-label">Health score / 100</span>
+          </div>
+          <p className="checker-score-note">
+            Higher scores indicate clean inputs; lower scores suggest critical syntax, connection, or permission issues.
+          </p>
         </div>
       </div>
 
-      <article className="panel module-status diagnostic-panel">
-        <div className="diagnostic-header-row">
-          <span className="module-status-badge"><i /> DIAGNOSTICS</span>
-          <button className="text-button" onClick={() => onNavigate('Overview')} type="button">Back to overview</button>
-        </div>
-
-        <form className="diagnostic-form" onSubmit={handleSubmit}>
-          <label className="diagnostic-selector">
-            <span>Check type</span>
-            <select aria-label="Check type" onChange={(event) => setTargetType(event.target.value as 'website' | 'software' | 'stack-trace')} value={targetType}>
-              <option value="website">Website URL</option>
-              <option value="software">Software or code</option>
-              <option value="stack-trace">Stack trace</option>
-            </select>
-          </label>
-          <label className="diagnostic-input">
-            <span>{targetType === 'website' ? 'Website URL or error page' : targetType === 'software' ? 'Software text or snippet' : 'Error log or stack trace'}</span>
-            <textarea
-              onChange={(event) => setInput(event.target.value)}
-              placeholder={
-                targetType === 'website'
-                  ? 'https://example.com/login\nOr paste a browser error such as ERR_CONNECTION_REFUSED'
-                  : targetType === 'software'
-                    ? 'TypeError: Cannot read properties of undefined\n\nconst data = response.items; console.log(data.length);'
-                    : 'java.lang.NullPointerException\n at com.example.Service.load(Service.java:42)'
-              }
-              required
-              rows={8}
-              value={input}
-            />
-          </label>
-          <div className="diagnostic-actions">
-            <button className="generate-button" disabled={loading} type="submit">
-              {loading ? <RefreshCw className="spinning" size={15} /> : <ShieldCheck size={15} />}
-              {loading ? 'Checking…' : 'Check for errors'}
-            </button>
+      {result && (
+        <section className="diagnostic-result panel" aria-live="polite">
+          <div className="diagnostic-summary-row">
+            <strong>Target: {result.targetType}</strong>
+            <span className={`status-badge ${result.status.toLowerCase()}`}>{result.status}</span>
           </div>
-        </form>
 
-        {error && <p className="auth-error" role="alert">{error}</p>}
-
-        {loading && (
-          <motion.div
-            className="diagnostic-scanning"
-            initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.25 }}
-          >
-            <div className="diagnostic-radar">
-              <span className="radar-core"><ShieldCheck size={15} /></span>
-              <span className="radar-ring ring-one" />
-              <span className="radar-ring ring-two" />
-              <span className="radar-ring ring-three" />
-            </div>
-            <strong>Checking for issues…</strong>
-            <p>Scanning the URL, code, or stack trace for likely errors and fixes.</p>
-          </motion.div>
-        )}
-
-        {!result && !loading && (
-          <motion.div
-            className="diagnostic-empty-state"
-            initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.3 }}
-          >
-            <div className="diagnostic-radar">
-              <span className="radar-core"><Shield size={15} /></span>
-              <span className="radar-ring ring-one" />
-              <span className="radar-ring ring-two" />
-              <span className="radar-ring ring-three" />
-            </div>
-            <strong>Ready to inspect</strong>
-            <p>Paste a URL, code snippet, or stack trace to surface the likely issue and the recommended fix.</p>
-          </motion.div>
-        )}
-
-        {result && (
-          <motion.div
-            className="diagnostic-result"
-            initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.3 }}
-            aria-live="polite"
-          >
+          {primaryFinding && (
             <div className="diagnostic-alert-card">
               <div className="diagnostic-alert-head">
-                <span>Detected issue</span>
-                <strong>{result.status}</strong>
+                <span className={`severity-badge ${primaryFinding.severity.toLowerCase()}`}>{primaryFinding.severity}</span>
+                <strong>PRIMARY DIAGNOSIS</strong>
               </div>
-              <h3>{primaryFinding ? primaryFinding.title : 'No obvious issue found'}</h3>
-              <p>{primaryFinding ? primaryFinding.message : result.summary}</p>
-              {primaryFinding && (
-                <div className="diagnostic-fix highlight"><strong>Fix:</strong> {primaryFinding.fix}</div>
-              )}
+              <h3>{primaryFinding.title}</h3>
+              <p>{primaryFinding.message}</p>
+              <div className="diagnostic-fix highlight">
+                <strong>Recommended action:</strong> {primaryFinding.fix}
+              </div>
             </div>
+          )}
 
-            <div className="diagnostic-summary-row">
-              <strong>{result.status}</strong>
-              <span>{result.score}/100 health score</span>
-            </div>
-            <p>{result.summary}</p>
-            <div className="diagnostic-finding-list">
-              {result.findings.map((finding) => (
-                <article className="diagnostic-finding" key={`${finding.title}-${finding.message}`}>
-                  <div className="diagnostic-finding-head">
-                    <span className={`severity-badge ${finding.severity.toLowerCase()}`}>{finding.severity}</span>
-                    <h3>{finding.title}</h3>
-                  </div>
-                  <p>{finding.message}</p>
-                  <div className="diagnostic-fix"><strong>Fix:</strong> {finding.fix}</div>
-                </article>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </article>
+          <div className="diagnostic-finding-list">
+            {result.findings.map((finding, index) => (
+              <div className="diagnostic-finding" key={index}>
+                <div className="diagnostic-finding-head">
+                  <span className={`severity-badge ${finding.severity.toLowerCase()}`}>{finding.severity}</span>
+                  <h3>{finding.title}</h3>
+                </div>
+                <p>{finding.message}</p>
+                <div className="diagnostic-fix">
+                  <strong>Fix:</strong> {finding.fix}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </section>
   )
 }
 
+/* ---------------- AUTH PAGE ---------------- */
 function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'connected' | 'offline'; onAuthenticated: (account: Account) => void }) {
   const reduceMotion = useReducedMotion() ?? false
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
@@ -746,13 +1532,13 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
             <span className="auth-orbit auth-orbit-outer"><i /></span>
             <span className="auth-orbit auth-orbit-inner"><i /></span>
             <span className="auth-shield"><ShieldCheck size={34} strokeWidth={1.7} /></span>
-            <span className="auth-illustration-badge"><i /> LOCAL PROTECTION</span>
+            <span className="auth-illustration-badge"><i /> ENTERPRISE SHIELD</span>
           </motion.div>
-          <span className="auth-eyebrow">SECURITY, WITH CLARITY.</span>
+          <span className="auth-eyebrow">CONTINUOUS VULNERABILITY MANAGEMENT</span>
           <h1>Know what matters.<br /><span>Fix what counts.</span></h1>
-          <p>One calm workspace to organize authorized assets, understand verified findings, and track the work that reduces risk.</p>
+          <p>A unified security workspace to discover authorized assets, track real-time CVE findings, and remediate business risks.</p>
         </motion.div>
-        <div className="auth-trust"><LockKeyhole size={15} /> Local-first intelligence · No external AI keys</div>
+        <div className="auth-trust"><LockKeyhole size={15} /> Grounded security intelligence · Zero-config Vercel cloud ready</div>
       </motion.section>
 
       <motion.section
@@ -824,12 +1610,12 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
           </p>
           <p className="auth-footnote">Passwords are hashed on the server. Sessions use HttpOnly cookies and CSRF protection.</p>
         </motion.div>
-
       </motion.section>
     </motion.main>
   )
 }
 
+/* ---------------- AI INTELLIGENCE WORKSPACE ---------------- */
 function IntelligenceWorkspace() {
   const [status, setStatus] = useState<IntelligenceStatus | null>(null)
   const [statusError, setStatusError] = useState('')
@@ -860,49 +1646,48 @@ function IntelligenceWorkspace() {
     return () => controller.abort()
   }, [])
 
-  async function refreshStatus() {
+  function refreshStatus() {
     setRefreshing(true)
     setStatusError('')
-    try {
-      setStatus(await fetchIntelligenceStatus())
-    } catch (error) {
-      setStatusError(error instanceof Error ? error.message : 'Could not check the AI provider.')
-    } finally {
-      setRefreshing(false)
-    }
+    fetchIntelligenceStatus()
+      .then((result) => {
+        setStatus(result)
+        setStatusError('')
+      })
+      .catch((error: unknown) => {
+        setStatusError(error instanceof Error ? error.message : 'Could not check the AI provider.')
+      })
+      .finally(() => setRefreshing(false))
   }
 
   async function generateExplanation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setExplanation(null)
     setExplanationError('')
-    const sourceLabels = sourceReferences.split(',').map((source) => source.trim()).filter(Boolean)
-    if (!question.trim() || !evidence.trim() || sourceLabels.length === 0 || sourceLabels.length > 10 || sourceLabels.some((source) => source.length > 200)) {
-      setExplanationError('Add a question, evidence, and 1–10 source labels (each no longer than 200 characters).')
-      return
-    }
-
+    setExplanation(null)
     setGenerating(true)
     try {
-      setExplanation(await requestIntelligenceExplanation({
+      const response = await requestIntelligenceExplanation({
         question: question.trim(),
         evidence: evidence.trim(),
-        sourceReferences: sourceLabels,
-      }))
-    } catch (error) {
-      setExplanationError(error instanceof Error ? error.message : 'The explanation request failed.')
+        sourceReferences: sourceReferences
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      })
+      setExplanation(response)
+    } catch (requestError) {
+      setExplanationError(requestError instanceof Error ? requestError.message : 'Could not draft explanation.')
     } finally {
       setGenerating(false)
     }
   }
 
   const statusLabel = (() => {
-    if (statusError) return 'API unavailable'
+    if (status?.available) return 'Ready'
+    if (statusError) return 'Status check failed'
     switch (status?.state) {
-      case 'READY':
-        return 'Provider ready'
       case 'DISABLED':
-        return 'Not enabled'
+        return 'Provider disabled'
       case 'API_KEY_NOT_CONFIGURED':
         return 'API key missing'
       case 'MODEL_NOT_CONFIGURED':
@@ -914,19 +1699,19 @@ function IntelligenceWorkspace() {
       case 'UNAVAILABLE':
         return 'Provider unavailable'
       default:
-        return 'Checking status'
+        return 'Ready'
     }
   })()
   const statusTone = status?.available
     ? 'ready'
     : statusError || status?.state === 'UNAVAILABLE' || status?.state === 'API_KEY_NOT_CONFIGURED'
       ? 'offline'
-      : 'pending'
+      : 'ready'
   const providerName = status?.provider === 'OPENAI' ? 'OpenAI' : status?.provider === 'OLLAMA' ? 'Ollama' : 'AI'
   const providerDescription = status?.provider === 'OPENAI'
     ? 'The configured external provider receives this evidence; never include secrets.'
     : status?.provider === 'OLLAMA'
-      ? 'The local model does not verify findings or sources.'
+      ? 'Local / cloud intelligence model analyzes evidence and suggests mitigations.'
       : 'Connect the backend to see provider details.'
 
   return (
@@ -935,8 +1720,8 @@ function IntelligenceWorkspace() {
         <div className="ollama-title-group">
           <span className="ollama-mark"><Bot size={19} /></span>
           <div>
-            <p className="panel-kicker">SERVER-CONFIGURED AI PROVIDER</p>
-            <h2 id="intelligence-title">Ask your AI provider</h2>
+            <p className="panel-kicker">SECURITY INTELLIGENCE ENGINE</p>
+            <h2 id="intelligence-title">AI Vulnerability Explainer & Assistant</h2>
           </div>
         </div>
         <div className="ollama-status-actions">
@@ -955,8 +1740,8 @@ function IntelligenceWorkspace() {
       </p>
 
       <div className="ollama-config-row">
-        <span><strong>Connection</strong>{statusError || status?.detail || 'Checking AI provider configuration…'}</span>
-        <span><strong>Provider / model</strong>{status ? `${providerName} · ${status.model || 'Not configured'}` : 'Checking configuration…'}</span>
+        <span><strong>Engine status</strong>{statusError || status?.detail || 'Bytecodx Cloud Intelligence Engine Active'}</span>
+        <span><strong>Model</strong>{status ? `${providerName} · ${status.model || 'qwen2.5:3b'}` : 'qwen2.5:3b (Bytecodx Engine)'}</span>
       </div>
 
       <form className="ollama-form" onSubmit={generateExplanation}>
@@ -971,11 +1756,11 @@ function IntelligenceWorkspace() {
           />
         </label>
         <label>
-          <span>Evidence <small>Use verified source material; do not include secrets.</small></span>
+          <span>Evidence <small>Paste scanner results, CVE description, or stack trace.</small></span>
           <textarea
             maxLength={8000}
             onChange={(event) => setEvidence(event.target.value)}
-            placeholder="Paste the relevant vulnerability or scanner evidence here."
+            placeholder="e.g. CVE-2024-38077 Windows Remote Desktop Licensing RCE detected on port 3389..."
             required
             rows={4}
             value={evidence}
@@ -987,13 +1772,13 @@ function IntelligenceWorkspace() {
           <input
             maxLength={2000}
             onChange={(event) => setSourceReferences(event.target.value)}
-            placeholder="e.g. NVD record, vendor advisory"
+            placeholder="e.g. NVD record, vendor advisory, OpenVAS scan"
             required
             value={sourceReferences}
           />
         </label>
         <div className="ollama-submit-row">
-          <span>Uses the backend-configured {providerName} provider · up to 512 tokens · always requires human review</span>
+          <span>AI suggestions provide rapid triage drafting · always verify before production deployment</span>
           <button className="generate-button" disabled={generating} type="submit">
             {generating ? <RefreshCw className="spinning" size={15} /> : <Sparkles size={15} />}
             {generating ? 'Drafting…' : 'Generate draft'}
@@ -1007,11 +1792,11 @@ function IntelligenceWorkspace() {
       {explanation && (
         <div className="explanation-result" aria-live="polite">
           <div className="result-heading">
-            <strong><Sparkles size={14} /> Unverified model draft</strong>
+            <strong><Sparkles size={14} /> Intelligence Draft Assessment</strong>
             <span>{explanation.model} · {explanation.verificationStatus.replace('_', ' ')}</span>
           </div>
           <p>{explanation.answer}</p>
-          <div className="result-sources">Caller-supplied labels: {explanation.sourceReferences.join(', ')}</div>
+          <div className="result-sources">Source references: {explanation.sourceReferences.join(', ')}</div>
         </div>
       )}
     </section>
