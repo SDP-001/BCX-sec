@@ -3,6 +3,8 @@
 An ongoing & curated collection of awesome software best practices and techniques, libraries and frameworks, e-books, research resources, technical guidelines, and industry-standard tools for Software Vulnerabilities Management in Cybersecurity, maintained by **Bytecodx**.
 > Thanks to all contributors, you're awesome and wouldn't be possible without you! Our goal is to build a categorized community-driven collection of very well-known resources.
 
+> **Application foundation:** [Bytecodx platform](./SecurePatch-AI/README.md) is a separate, phased full-stack application workspace in this repository. It includes a React dashboard, Java API, PostgreSQL, session authentication, and local Ollama setup; scanner findings are never fabricated.
+
 ![VMaaS](./img/vmaas-chart-v1.png)
 
 ## `Table of Contents`

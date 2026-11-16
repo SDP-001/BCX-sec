@@ -127,3 +127,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Bytecodx application
+node_modules/
+SecurePatch-AI/frontend/dist/
+SecurePatch-AI/backend/target/
+SecurePatch-AI/backend/.mvn/wrapper/maven-wrapper.jar
+.env
+.env.*
+!.env.example
+.DS_Store

@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: bytecodx-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/bytecodx}
+    username: ${DB_USERNAME:bytecodx}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: ${SERVER_PORT:5001}
+  error:
+    include-message: never
+
+bytecodx:
+  demo-account:
+    enabled: ${DEMO_ACCOUNT_ENABLED:false}
+    email: ${DEMO_ACCOUNT_EMAIL:}
+    password: ${DEMO_ACCOUNT_PASSWORD:}
+  ollama:
+    enabled: ${OLLAMA_ENABLED:true}
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    model: ${OLLAMA_MODEL:qwen2.5:3b}
+    connect-timeout: ${OLLAMA_CONNECT_TIMEOUT:2s}
+    read-timeout: ${OLLAMA_READ_TIMEOUT:60s}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
