@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import { afterEach, test } from 'node:test'
-import handler from '../api/[...path].js'
+import handler from '../src/server/apiProxy.js'
+import healthRoute from '../api/v1/health.js'
+import authRoute from '../api/v1/auth/[endpoint].js'
+import intelligenceRoute from '../api/v1/intelligence/[endpoint].js'
+import ollamaRoute from '../api/v1/intelligence/ollama/[endpoint].js'
+import diagnosticsRoute from '../api/v1/diagnostics/analyze.js'
 
 const originalBackendUrl = process.env.BACKEND_API_URL
 const originalFetch = globalThis.fetch
@@ -35,6 +40,12 @@ afterEach(() => {
     process.env.BACKEND_API_URL = originalBackendUrl
   }
   globalThis.fetch = originalFetch
+})
+
+test('exports proxy handlers for every nested API route', () => {
+  for (const route of [healthRoute, authRoute, intelligenceRoute, ollamaRoute, diagnosticsRoute]) {
+    assert.equal(typeof route, 'function')
+  }
 })
 
 test('reports an explicit configuration error when the backend URL is missing', async () => {
@@ -105,7 +116,7 @@ test('rejects insecure backend URLs and unsupported methods', async () => {
   await handler({
     method: 'GET',
     query: { path: ['..', 'actuator', 'env'] },
-    url: '/api/../actuator/env',
+    url: '/api/%252e%252e/actuator/env',
   }, traversalResponse)
   assert.equal(traversalResponse.statusCode, 400)
 })

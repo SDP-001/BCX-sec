@@ -26,25 +26,29 @@ export default async function handler(request, response) {
     return response.status(500).json({ message: 'BACKEND_API_URL must be an HTTPS origin without a path.' })
   }
 
-  const rawPath = request.query?.path
-  const pathSegments = Array.isArray(rawPath)
-    ? rawPath
-    : typeof rawPath === 'string'
-      ? rawPath.split('/')
-      : []
-  if (
-    pathSegments.length === 0
-    || pathSegments.some((segment) => typeof segment !== 'string'
+  const requestUrl = new URL(request.url ?? '/', 'https://vercel.invalid')
+  if (!requestUrl.pathname.startsWith('/api/')) {
+    return response.status(404).json({ message: 'The API route was not found.' })
+  }
+  let pathSegments
+  try {
+    pathSegments = requestUrl.pathname.slice('/api/'.length).split('/').map(decodeURIComponent)
+  } catch {
+    return response.status(400).json({ message: 'The API path is invalid.' })
+  }
+  const invalidPath = pathSegments.length === 0 || pathSegments.some((segment) => {
+    return typeof segment !== 'string'
       || !segment
       || segment === '.'
       || segment === '..'
       || segment.includes('/')
-      || segment.includes('\\'))
-  ) {
+      || segment.includes('\\')
+      || /%(?:2e|2f|5c)/i.test(segment)
+  })
+  if (invalidPath) {
     return response.status(400).json({ message: 'The API path is invalid.' })
   }
 
-  const requestUrl = new URL(request.url ?? '/', 'https://vercel.invalid')
   const upstreamUrl = new URL(
     `/api/${pathSegments.map((segment) => encodeURIComponent(segment)).join('/')}${requestUrl.search}`,
     backend.origin,
@@ -85,10 +89,4 @@ export default async function handler(request, response) {
     console.error('The API proxy could not reach the configured backend.')
     return response.status(502).json({ message: 'The backend API could not be reached.' })
   }
-}
-
-export const config = {
-  api: {
-    bodyParser: true,
-  },
 }
