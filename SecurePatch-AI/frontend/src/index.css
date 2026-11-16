@@ -527,3 +527,12 @@ h2 { margin: 0; color: var(--ink); font: 650 13px Manrope,sans-serif; letter-spa
 
 .detail-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); z-index: 50; display: grid; place-items: center; padding: 20px; }
 .detail-modal-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; width: min(640px, 100%); max-height: 85vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); }
+
+.code-solution-box { padding: 12px; background: #191b30; color: #aeb4ff; border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 10px; line-height: 1.6; white-space: pre-wrap; overflow-x: auto; margin-top: 8px; border: 1px solid #33385e; }
+.stage-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; font: 700 8px 'DM Mono', monospace; letter-spacing: 0.4px; text-transform: uppercase; }
+.stage-tag.active { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+.stage-tag.pre { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
+.stage-tag.solved { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+.dark-theme .stage-tag.active { background: #4a1515; color: #ff8a80; border-color: #691b1b; }
+.dark-theme .stage-tag.pre { background: #3e270a; color: #ffd54f; border-color: #5d3809; }
+.dark-theme .stage-tag.solved { background: #133316; color: #a5d6a7; border-color: #1b4d20; }

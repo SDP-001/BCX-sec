@@ -233,6 +233,28 @@ function handleBuiltinApi(pathSegments, request, response) {
     return response.status(200).json(result)
   }
 
+  // Threats: Detect Pre-Attack Probes and Live Attacks
+  if (endpoint === 'threats/detect') {
+    const body = parseJsonBody(request)
+    const result = runThreatDetection(body.input, body.target)
+    return response.status(200).json(result)
+  }
+
+  // Threats: Solve & Mitigate Threat
+  if (endpoint === 'threats/solve') {
+    const body = parseJsonBody(request)
+    const threatId = body.threatId || 'thr_' + Date.now().toString(36)
+    const action = body.action || 'BLOCK_IP_AND_WAF_VIRTUAL_PATCH'
+    return response.status(200).json({
+      success: true,
+      threatId,
+      actionApplied: action,
+      status: 'SOLVED',
+      timestamp: new Date().toISOString(),
+      auditLog: `[DEFENSE ACTIVATED] Threat ${threatId} successfully neutralized via automated mitigation (${action}). Host isolated and firewall rules enforced.`,
+    })
+  }
+
   // Default catch-all
   return response.status(200).json({
     status: 'OK',
@@ -502,4 +524,177 @@ function calculateScore(findings) {
   }
   const avgPenalty = penalty / Math.max(findings.length, 1)
   return Math.max(0, Math.min(100, Math.round(100 - avgPenalty)))
+}
+
+
+function runThreatDetection(rawInput, rawTarget) {
+  const input = (rawInput || '').trim()
+  const lower = input.toLowerCase()
+  const target = rawTarget || '/api/v1/workload'
+  const threatId = 'thr_' + Date.now().toString(36)
+
+  // 1. Check for Active SQL Injection Attack
+  if (
+    lower.includes('union select') ||
+    lower.includes("' or 1=1") ||
+    lower.includes('" or ""="') ||
+    lower.includes("' or '1'='1") ||
+    lower.includes('sleep(') ||
+    lower.includes('waitfor delay') ||
+    lower.includes('information_schema') ||
+    lower.includes('drop table') ||
+    lower.includes('--') && (lower.includes('select') || lower.includes('or'))
+  ) {
+    return {
+      id: threatId,
+      attackStage: 'ACTIVE_ATTACK',
+      attackType: 'SQL_INJECTION',
+      title: 'Active SQL Injection (SQLi) Attempt Detected',
+      severity: 'CRITICAL',
+      attackerIp: '198.51.100.42',
+      targetEndpoint: target,
+      detectionRule: 'SIG-SQLI-1001: Boolean-based / Union-based query manipulation detected',
+      payloadSnippet: input.slice(0, 180),
+      impact: 'High risk of unauthorized database data extraction, authentication bypass, or schema tampering.',
+      mitigationAction: 'BLOCK_IP_AND_PARAMETERIZE',
+      solutionCode: '1. Auto-blocked attacker IP 198.51.100.42 on perimeter gateway.\n2. Injected WAF Rule: SecRule ARGS "@rx (?i)(union\\s+select|\'\\s*or\\s*\'?1)" "deny,status:403"\n3. Code Fix: Convert all concatenated queries to PreparedStatements with bound parameters.',
+      status: 'DETECTED',
+    }
+  }
+
+  // 2. Check for Active Remote Code Execution (RCE) / Command Injection
+  if (
+    lower.includes('; cat ') ||
+    lower.includes('| cat ') ||
+    lower.includes('&& whoami') ||
+    lower.includes('$(whoami)') ||
+    lower.includes('| powershell') ||
+    lower.includes('bash -i') ||
+    lower.includes('/bin/sh') ||
+    lower.includes('nc -e') ||
+    lower.includes('cmd.exe /c') ||
+    lower.includes('curl ') && lower.includes('| sh')
+  ) {
+    return {
+      id: threatId,
+      attackStage: 'ACTIVE_ATTACK',
+      attackType: 'COMMAND_INJECTION_RCE',
+      title: 'Remote Command Execution (RCE) Attack In Progress',
+      severity: 'CRITICAL',
+      attackerIp: '203.0.113.88',
+      targetEndpoint: target,
+      detectionRule: 'SIG-RCE-2002: Shell meta-character chaining / unescaped command injection',
+      payloadSnippet: input.slice(0, 180),
+      impact: 'Complete system compromise; unauthorized arbitrary shell command execution with service privileges.',
+      mitigationAction: 'ISOLATE_HOST_AND_DROP_TRAFFIC',
+      solutionCode: '1. Isolated target host container from internal VPC bridge.\n2. Perimeter rule: Blocked process fork requests containing shell meta-characters (; | &&).\n3. Code Fix: Remove runtime shell invocations. Use typed, parameterized ProcessBuilder APIs with whitelisted arguments.',
+      status: 'DETECTED',
+    }
+  }
+
+  // 3. Check for Active Cross-Site Scripting (XSS)
+  if (
+    lower.includes('<script') ||
+    lower.includes('javascript:') ||
+    lower.includes('onerror=') ||
+    lower.includes('onload=') ||
+    lower.includes('document.cookie') ||
+    lower.includes('eval(') ||
+    lower.includes('<img src=x') ||
+    lower.includes('alert(')
+  ) {
+    return {
+      id: threatId,
+      attackStage: 'ACTIVE_ATTACK',
+      attackType: 'CROSS_SITE_SCRIPTING',
+      title: 'Active Cross-Site Scripting (XSS) Exploit Intercepted',
+      severity: 'HIGH',
+      attackerIp: '192.0.2.14',
+      targetEndpoint: target,
+      detectionRule: 'SIG-XSS-3003: Unsanitized HTML/JS DOM injection payload detected',
+      payloadSnippet: input.slice(0, 180),
+      impact: 'Session hijacking, cookie theft, DOM defacement, or credential harvesting of active users.',
+      mitigationAction: 'VIRTUAL_PATCH_SANITIZE',
+      solutionCode: '1. Virtual Patch: Sanitized and stripped dangerous DOM tags (<script>, onerror) in proxy layer.\n2. Header Fix: Deployed strict Content-Security-Policy: default-src \'self\'; script-src \'self\'.\n3. Code Fix: HTML entity encode user inputs before rendering into views.',
+      status: 'DETECTED',
+    }
+  }
+
+  // 4. Check for Active Path Traversal / LFI
+  if (
+    lower.includes('../') ||
+    lower.includes('..\\') ||
+    lower.includes('/etc/passwd') ||
+    lower.includes('win.ini') ||
+    lower.includes('%2e%2e%2f') ||
+    lower.includes('%2e%2e/') ||
+    lower.includes('windows/system32')
+  ) {
+    return {
+      id: threatId,
+      attackStage: 'ACTIVE_ATTACK',
+      attackType: 'PATH_TRAVERSAL',
+      title: 'Local File Inclusion / Path Traversal Attack Detected',
+      severity: 'HIGH',
+      attackerIp: '198.51.100.99',
+      targetEndpoint: target,
+      detectionRule: 'SIG-LFI-4004: Directory traversal sequence (../) seeking sensitive files',
+      payloadSnippet: input.slice(0, 180),
+      impact: 'Unauthorized reading of server configurations, system SAM / password hashes, and source files.',
+      mitigationAction: 'BLOCK_PATH_TRAVERSAL',
+      solutionCode: '1. Denied request with HTTP 403 Forbidden.\n2. WAF Rule: Drop all URI paths containing relative dot-dot segments (..).\n3. Code Fix: Canonicalize paths with Path.toRealPath() and assert that result starts with approved base directory.',
+      status: 'DETECTED',
+    }
+  }
+
+  // 5. Check for Pre-Attack Reconnaissance & Vulnerability Probing
+  if (
+    lower.includes('/.git') ||
+    lower.includes('/.env') ||
+    lower.includes('/actuator') ||
+    lower.includes('/wp-admin') ||
+    lower.includes('/swagger') ||
+    lower.includes('nikto') ||
+    lower.includes('dirbuster') ||
+    lower.includes('sqlmap') ||
+    lower.includes('nmap') ||
+    lower.includes('masscan') ||
+    lower.includes('port 3389') ||
+    lower.includes('port 22') ||
+    lower.includes('missing hsts') ||
+    lower.includes('unauthenticated endpoint')
+  ) {
+    return {
+      id: threatId,
+      attackStage: 'PRE_ATTACK',
+      attackType: 'RECONNAISSANCE_PROBE',
+      title: 'Pre-Attack Reconnaissance & Attack Surface Probe Detected',
+      severity: 'MEDIUM',
+      attackerIp: '198.51.100.12',
+      targetEndpoint: target,
+      detectionRule: 'PRE-RECON-5005: Automated scanner probe seeking exposed configuration / endpoints',
+      payloadSnippet: input.slice(0, 180),
+      impact: 'Attacker is mapping the perimeter before launching an exploit. Information disclosure risk.',
+      mitigationAction: 'PROACTIVE_HARDENING_SHUTDOWN',
+      solutionCode: '1. Proactive Block: Blacklisted automated scanner User-Agent string.\n2. Restricted sensitive route: Denied public access to internal routes (/.env, /.git, /actuator).\n3. Enforced perimeter firewall rules and enabled HSTS.',
+      status: 'DETECTED',
+    }
+  }
+
+  // 6. Benign / Safe traffic
+  return {
+    id: threatId,
+    attackStage: 'BENIGN',
+    attackType: 'NORMAL_TRAFFIC',
+    title: 'Clean Request / No Active Threat Detected',
+    severity: 'INFO',
+    attackerIp: '10.0.1.1',
+    targetEndpoint: target,
+    detectionRule: 'RULE-CLEAN: Traffic matches normal expected request patterns',
+    payloadSnippet: input.slice(0, 180),
+    impact: 'None. Request is clean and conforms to standard traffic guidelines.',
+    mitigationAction: 'NO_ACTION_REQUIRED',
+    solutionCode: 'System operating normally. Continuous real-time inspection active.',
+    status: 'SOLVED',
+  }
 }

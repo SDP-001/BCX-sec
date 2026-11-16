@@ -109,6 +109,29 @@ test('serves built-in auth, intelligence and diagnostic routes on cloud deployme
   assert.equal(diagRes.body.targetType, 'website')
   assert.ok(Array.isArray(diagRes.body.findings))
   assert.ok(typeof diagRes.body.score === 'number')
+
+  // Threat detection test
+  const threatRes = createResponse()
+  await handler({
+    method: 'POST',
+    query: { __proxy_path: 'v1/threats/detect' },
+    url: '/api/proxy?__proxy_path=v1%2Fthreats%2Fdetect',
+    body: { input: "admin' OR 1=1 --", target: '/api/v1/auth/login' },
+  }, threatRes)
+  assert.equal(threatRes.statusCode, 200)
+  assert.equal(threatRes.body.attackStage, 'ACTIVE_ATTACK')
+  assert.equal(threatRes.body.attackType, 'SQL_INJECTION')
+
+  // Threat solve test
+  const solveRes = createResponse()
+  await handler({
+    method: 'POST',
+    query: { __proxy_path: 'v1/threats/solve' },
+    url: '/api/proxy?__proxy_path=v1%2Fthreats%2Fsolve',
+    body: { threatId: 'thr-test', action: 'BLOCK_IP' },
+  }, solveRes)
+  assert.equal(solveRes.statusCode, 200)
+  assert.equal(solveRes.body.status, 'SOLVED')
 })
 
 test('forwards API requests and cookies without forwarding client-supplied API keys when upstream backend is configured', async () => {
