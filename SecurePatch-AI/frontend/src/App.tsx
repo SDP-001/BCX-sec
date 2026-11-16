@@ -2362,17 +2362,38 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [authStage, setAuthStage] = useState<'idle' | 'verifying' | 'granted'>('idle')
+  const [authStepText, setAuthStepText] = useState('Initializing zero-trust handshake…')
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
     setSubmitting(true)
+    setAuthStage('verifying')
     try {
-      const account = mode === 'signup'
-        ? await signUp(email.trim(), displayName.trim(), password)
-        : await signIn(email.trim(), password)
+      setAuthStepText('Establishing TLS 1.3 cryptographic tunnel…')
+      await new Promise((r) => setTimeout(r, 260))
+
+      setAuthStepText('Verifying Zero-Trust identity credentials…')
+      const accountPromise = mode === 'signup'
+        ? signUp(email.trim(), displayName.trim(), password)
+        : signIn(email.trim(), password)
+      
+      const [account] = await Promise.all([
+        accountPromise,
+        new Promise((r) => setTimeout(r, 340))
+      ])
+
+      setAuthStepText('Validating SecOps RBAC role & clearances…')
+      await new Promise((r) => setTimeout(r, 280))
+
+      setAuthStage('granted')
+      setAuthStepText('Access Granted · Initializing Security Workspace…')
+      await new Promise((r) => setTimeout(r, 320))
+
       onAuthenticated(account)
     } catch (requestError) {
+      setAuthStage('idle')
       setError(requestError instanceof Error ? requestError.message : 'Could not sign in.')
     } finally {
       setSubmitting(false)
@@ -2389,10 +2410,27 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
   async function directDemoLogin() {
     setError('')
     setSubmitting(true)
+    setAuthStage('verifying')
     try {
-      const account = await signIn(DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASSWORD)
+      setAuthStepText('Establishing TLS 1.3 cryptographic tunnel…')
+      await new Promise((r) => setTimeout(r, 260))
+
+      setAuthStepText('Verifying Zero-Trust demo credentials…')
+      const [account] = await Promise.all([
+        signIn(DEMO_ACCOUNT_EMAIL, DEMO_ACCOUNT_PASSWORD),
+        new Promise((r) => setTimeout(r, 340))
+      ])
+
+      setAuthStepText('Validating SecOps Administrator clearances…')
+      await new Promise((r) => setTimeout(r, 280))
+
+      setAuthStage('granted')
+      setAuthStepText('Access Granted · Opening Security Workspace…')
+      await new Promise((r) => setTimeout(r, 320))
+
       onAuthenticated(account)
     } catch (requestError) {
+      setAuthStage('idle')
       setError(requestError instanceof Error ? requestError.message : 'Could not sign in.')
     } finally {
       setSubmitting(false)
@@ -2427,6 +2465,7 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
             transition={{ duration: reduceMotion ? 0 : 0.5, delay: reduceMotion ? 0 : 0.22, ease: 'easeOut' }}
           >
             <span className="auth-illustration-glow" />
+            <span className="auth-laser-beam" />
             <span className="auth-orbit auth-orbit-outer"><i /></span>
             <span className="auth-orbit auth-orbit-inner"><i /></span>
             <span className="auth-shield"><ShieldCheck size={34} strokeWidth={1.7} /></span>
@@ -2435,6 +2474,11 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
           <span className="auth-eyebrow">CONTINUOUS VULNERABILITY MANAGEMENT</span>
           <h1>Know what matters.<br /><span>Fix what counts.</span></h1>
           <p>A unified security workspace to discover authorized assets, track real-time CVE findings, and remediate business risks.</p>
+          <div className="auth-floating-pills">
+            <span className="auth-pill"><Shield size={10} color="#7d88ff" /> Real-Time IDS</span>
+            <span className="auth-pill"><Radar size={10} color="#8be0cf" /> Zero-Trust Access</span>
+            <span className="auth-pill"><LockKeyhole size={10} color="#ffb74d" /> FIPS 140-3 Cryptography</span>
+          </div>
         </motion.div>
         <div className="auth-trust"><LockKeyhole size={15} /> Grounded security intelligence · Zero-config Vercel cloud ready</div>
       </motion.section>
@@ -2509,6 +2553,52 @@ function AuthPage({ apiState, onAuthenticated }: { apiState: 'checking' | 'conne
           <p className="auth-footnote">Passwords are hashed on the server. Sessions use HttpOnly cookies and CSRF protection.</p>
         </motion.div>
       </motion.section>
+
+      {authStage !== 'idle' && (
+        <motion.div
+          className="auth-verifying-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <div className="auth-verifying-card">
+            <div className="auth-radar-wrapper">
+              <span className="auth-radar-ring" />
+              <span className="auth-radar-beam" />
+              <div className="auth-radar-shield">
+                {authStage === 'granted' ? (
+                  <ShieldCheck size={38} color="#2e7d32" strokeWidth={2.2} />
+                ) : (
+                  <Shield size={34} color="#5965ed" strokeWidth={2} />
+                )}
+              </div>
+            </div>
+
+            <div className="auth-verifying-text">
+              <span className="auth-kicker">ZERO-TRUST AUTHENTICATION GATEWAY</span>
+              <h3>{authStage === 'granted' ? 'Access Granted' : 'Authenticating Security Session'}</h3>
+              <p className="auth-step-label">{authStepText}</p>
+            </div>
+
+            <div className="progress-bar-wrap" style={{ height: '5px', marginTop: '16px', width: '260px' }}>
+              <div
+                className="progress-bar-fill scan-progress-active"
+                style={{
+                  width: authStage === 'granted' ? '100%' : '75%',
+                  background: authStage === 'granted' ? '#2e7d32' : 'linear-gradient(90deg, #5965ed, #ff1744)',
+                  transition: 'all 0.3s ease',
+                }}
+              />
+            </div>
+
+            <div className="auth-verifying-badges">
+              <span><LockKeyhole size={10} /> TLS 1.3</span>
+              <span><ShieldCheck size={10} /> SHA-256</span>
+              <span><Fingerprint size={10} /> RBAC SecOps</span>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </motion.main>
   )
 }

@@ -866,3 +866,201 @@ h2 { margin: 0; color: var(--ink); font: 650 13px Manrope,sans-serif; letter-spa
 .dark-theme .severity-badge.high { background: #42240b; color: #ffb74d; border-color: #6e390c; }
 .dark-theme .severity-badge.medium { background: #132a48; color: #90caf9; border-color: #1e416e; }
 .dark-theme .severity-badge.low { background: #1b381e; color: #a5d6a7; border-color: #27542c; }
+
+/* ==========================================================================
+   LOGIN PAGE HIGH-TECH CYBERSECURITY ANIMATIONS
+   ========================================================================== */
+
+/* Laser Scan Line across the Hero Illustration */
+.auth-illustration {
+  overflow: hidden;
+  border-radius: 16px;
+}
+.auth-laser-beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #7d88ff 50%, #8be0cf 100%);
+  box-shadow: 0 0 12px #7d88ff, 0 0 20px #8be0cf;
+  animation: laserScan 3s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 5;
+}
+@keyframes laserScan {
+  0% { top: 5%; opacity: 0.2; }
+  50% { top: 92%; opacity: 0.9; }
+  100% { top: 5%; opacity: 0.2; }
+}
+
+/* Floating Technology Feature Pills in Auth Hero */
+.auth-floating-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+.auth-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 20px;
+  background: rgba(42, 45, 77, 0.65);
+  border: 1px solid rgba(174, 180, 255, 0.25);
+  color: #c4c8f5;
+  font: 500 8.5px 'DM Mono', monospace;
+  letter-spacing: 0.4px;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+  animation: pillFloat 4s ease-in-out infinite alternate;
+}
+.auth-pill:nth-child(2) { animation-delay: 1.2s; }
+.auth-pill:nth-child(3) { animation-delay: 2.4s; }
+@keyframes pillFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-4px); }
+}
+
+/* Interactive focus and hover on inputs and buttons */
+.auth-form input {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
+}
+.auth-form input:focus {
+  border-color: #5965ed !important;
+  box-shadow: 0 0 0 3px rgba(89, 101, 237, 0.22), 0 0 14px rgba(89, 101, 237, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+.demo-login-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  border: 1px solid #dfe2fb;
+}
+.demo-login-card:hover {
+  border-color: #b9bfff;
+  box-shadow: 0 6px 18px rgba(89, 101, 237, 0.1);
+}
+
+.demo-login-button {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer;
+}
+.demo-login-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(81, 93, 198, 0.25);
+}
+
+.auth-submit {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  background: linear-gradient(135deg, #5965ed 0%, #4653dd 100%);
+  box-shadow: 0 4px 14px rgba(89, 101, 237, 0.35);
+  cursor: pointer;
+}
+.auth-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(89, 101, 237, 0.55);
+  background: linear-gradient(135deg, #6873f5 0%, #4e5be8 100%);
+}
+
+/* Fullscreen Authentication Verification Overlay */
+.auth-verifying-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(12, 14, 27, 0.88);
+  backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.auth-verifying-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 36px 32px;
+  background: radial-gradient(ellipse at 50% 0%, #202447 0%, #121426 80%);
+  border: 1px solid #3d4375;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(89, 101, 237, 0.2);
+  max-width: 420px;
+  width: 100%;
+  animation: cardPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardPopIn {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.auth-radar-wrapper {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  margin-bottom: 20px;
+  display: grid;
+  place-items: center;
+}
+
+.auth-radar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(125, 136, 255, 0.4);
+  animation: radarSpin 12s linear infinite;
+}
+
+.auth-radar-beam {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #5965ed;
+  box-shadow: 0 0 16px #5965ed;
+  animation: radarSpin 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.auth-radar-shield {
+  width: 62px;
+  height: 62px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #2a2f58, #181b33);
+  border: 1px solid rgba(174, 180, 255, 0.35);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.auth-verifying-text h3 {
+  margin: 6px 0 6px;
+  color: #f0f2ff;
+  font: 700 18px Manrope, sans-serif;
+  letter-spacing: -0.4px;
+}
+
+.auth-step-label {
+  margin: 0;
+  color: #9ea4d4;
+  font: 500 10.5px 'DM Mono', monospace;
+  letter-spacing: 0.3px;
+  min-height: 16px;
+}
+
+.auth-verifying-badges {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  font: 500 9px 'DM Mono', monospace;
+  color: #7980b5;
+}
+.auth-verifying-badges span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
